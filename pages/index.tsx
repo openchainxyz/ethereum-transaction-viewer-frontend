@@ -22,7 +22,7 @@ import {
     ThemeProvider
 } from "@mui/material";
 import {Box} from "@mui/system";
-import {apiEndpoint, findAffectedContract} from "../components/helpers";
+import {apiEndpoint, findAffectedContract, toHash} from "../components/helpers";
 import {ethers} from "ethers";
 import {ParamType} from "@ethersproject/abi";
 
