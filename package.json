@@ -1,0 +1,33 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@babel/core": "7.17.10",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@mui/icons-material": "^5.10.3",
+    "@mui/lab": "5.0.0-alpha.101",
+    "@mui/material": "^5.10.3",
+    "ethers": "^5.7.1",
+    "next": "12.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-draggable": "^4.4.5",
+    "react-with-separator": "=1.2.1",
+    "typescript": "^4.8.2"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.1",
+    "@types/node": "^18.7.15",
+    "@types/react": "^18.0.18",
+    "eslint": "8.23.0",
+    "eslint-config-next": "12.2.5"
+  }
+}
