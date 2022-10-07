@@ -19,3 +19,12 @@ To build an image, just
 ```bash
 docker build .
 ```
+# open repo in gitpod 
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/samczsun/ethereum-transaction-viewer-frontend)
+
+- If button is not visible then click - [https://gitpod.io/#https://github.com/samczsun/ethereum-transaction-viewer-frontend](https://gitpod.io/#https://github.com/samczsun/ethereum-transaction-viewer-frontend)
+
+- This will open this repository in a [Gitpod Instance](https://www.gitpod.io/) and 
+  - Will build the repo 
+  - Start and serve on port 3000 
