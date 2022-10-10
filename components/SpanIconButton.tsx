@@ -1,5 +1,4 @@
-import { SvgIcon, SvgIconProps } from '@mui/material';
-import FormatClearIcon from '@mui/icons-material/FormatClear';
+import { SvgIconProps } from '@mui/material';
 import * as React from 'react';
 
 type SpanIconButtonProps = {

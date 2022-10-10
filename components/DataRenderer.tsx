@@ -1,6 +1,5 @@
-import { ParamType } from '@ethersproject/abi';
+import { ParamType } from '@ethersproject/abi/lib.esm';
 import { BigNumber, ethers } from 'ethers';
-import { TraceMetadata } from './types';
 import * as React from 'react';
 import { SpanIconButton } from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';

@@ -1,20 +1,15 @@
 import { TraceEntryCallable, TraceEntryLog, TraceMetadata, TraceResult } from '../types';
 import * as React from 'react';
-import { EventFragment, Fragment, ParamType } from '@ethersproject/abi';
+import { ParamType } from '@ethersproject/abi';
 import { ParamFlatView } from '../ParamFlatView';
 import { DataRenderer } from '../DataRenderer';
-import { Grid, List, ListItem, TextField } from '@mui/material';
-import WithSeparator from 'react-with-separator';
-import FormatClearIcon from '@mui/icons-material/FormatClear';
-import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
+import { Grid, List, ListItem } from '@mui/material';
 import { ParamTreeView } from '../ParamTreeView';
 import { TraceTreeItem, TraceTreeNodeLabel } from '../TraceTreeItem';
 import { TraceTreeDialog } from '../TraceTreeDialog';
-import { chunkString, TreeItemContentSpan } from '../helpers';
-import { SpanIconButton } from '../SpanIconButton';
 import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
-import { useEventFragment, useFunctionFragment } from '../hooks/useFragment';
+import { useEventFragment } from '../hooks/useFragment';
 
 type LogTraceTreeItemProps = {
     traceResult: TraceResult;

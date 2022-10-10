@@ -3,7 +3,6 @@ import * as React from 'react';
 import { DateTime } from 'luxon';
 import humanizeDuration from 'humanize-duration';
 import { formatUnits } from 'ethers/lib/utils';
-import { BigNumber } from 'ethers';
 import { formatUnitsSmartly, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { PriceMetadata, TransactionInfoResponse } from '../types';
@@ -76,10 +75,10 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                     {formatUnits(transactionResponse.receipt.effectiveGasPrice, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
                 <TransactionAttribute name={'Max Priority Fee'}>
-                    {formatUnits(transactionResponse.transaction.maxPriorityFeePerGas, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionResponse.transaction.maxPriorityFeePerGas!, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
                 <TransactionAttribute name={'Max Fee'}>
-                    {formatUnits(transactionResponse.transaction.maxFeePerGas, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionResponse.transaction.maxFeePerGas!, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
             </>
         );
@@ -87,7 +86,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
         gasPriceInfo = (
             <>
                 <TransactionAttribute name={'Gas Price'}>
-                    {formatUnits(transactionResponse.transaction.gasPrice, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionResponse.transaction.gasPrice!, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
             </>
         );

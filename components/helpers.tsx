@@ -1,6 +1,6 @@
 import React from 'react';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { TraceEntry, TraceEntryCallable, TraceEntrySload, TraceEntrySstore, TraceMetadata } from './types';
+import { TraceEntry, TraceEntryCallable, TraceMetadata } from './types';
 import { formatUnits, ParamType } from 'ethers/lib/utils';
 import { createTheme } from '@mui/material';
 // noinspection ES6UnusedImports
