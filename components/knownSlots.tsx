@@ -1,7 +1,7 @@
 type KnownSlot = {
-    name: string,
-    bits: number,
-    type: string,
+    name: string;
+    bits: number;
+    type: string;
 };
 
 export const knownSlots: Record<string, KnownSlot> = {

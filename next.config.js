@@ -2,14 +2,15 @@
 const nextConfig = {
     reactStrictMode: true,
     swcMinify: true,
-    output: "standalone",
+    output: 'standalone',
 
     // remove these later
     typescript: {
         ignoreBuildErrors: true,
-    }, eslint: {
+    },
+    eslint: {
         ignoreDuringBuilds: true,
     },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

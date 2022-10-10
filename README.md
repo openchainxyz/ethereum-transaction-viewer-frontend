@@ -1,4 +1,5 @@
 # ethereum-tracing-srv frontend
+
 This is the frontend to the [Ethereum Transaction Viewer](https://tx.eth.samczsun.com/). By default, it's configured
 to use the production backend.
 
@@ -10,12 +11,14 @@ delegates out to the various components in [components/trace](components/trace).
 a lot of duplicated code from rapidly prototyping a schema that works.
 
 To bring up the frontend, just
+
 ```bash
 pnpm install
 pnpm run dev
 ```
 
 To build an image, just
+
 ```bash
 docker build .
 ```

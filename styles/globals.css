@@ -3,51 +3,40 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: RiformaLL;
-  src: url("/fonts/RiformaLLSub.woff2");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
+    font-family: RiformaLL;
+    src: url('/fonts/RiformaLLSub.woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
 }
 
 @font-face {
-  font-family: NBInter;
-  src: url("/fonts/NBInternational.woff2");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
+    font-family: NBInter;
+    src: url('/fonts/NBInternational.woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
 }
 
 html,
 body {
-  padding: 0;
-  margin: 0;
-  font-family: "RiformaLL", -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    padding: 0;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans,
+        Helvetica Neue, sans-serif;
 }
 
 .font-inter {
-  font-family: "NBInter";
+    font-family: 'NBInter', serif;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+    color: inherit;
+    text-decoration: none;
 }
 
 * {
-  box-sizing: border-box;
-}
-
-::-moz-selection {
-  /* Code for Firefox */
-  color: black;
-  background: #00e100;
-}
-
-::selection {
-  color: black;
-  background: #00e100;
+    box-sizing: border-box;
 }
 
 /* idk how to do dark mode */

@@ -1,0 +1,22 @@
+here are some transactions i found to help test stuff
+maybe i should be using jest or something lol
+
+0x298bfef7b02c175195818389cd09d0267b324ffea29833212edd23cab50a7b20
+- pre-byzantium tx which failed
+- test the status field in transaction info
+
+0x9ef7a35012286fef17da12624aa124ebc785d9e7621e1fd538550d1209eb9f7d
+- found by bunny
+- the ux should not lag when loading/interacting with this tx
+- should load under 2s max
+
+0xdfc76788b13ab1c033c7cd55fdb7a431b2bc8abe6b19ac9f7d22f4105bb43bff
+- creates a contract at the top level
+- test transaction info and trace
+
+
+0xf4a32f9a41616641baab98e8e7529e2934aa2cd8fa0b72ffd4b69a7127aa851a
+- check it displays 10000 wei instead of 0.0000???001 ether
+
+0xca873e41e050ef6a5d741504766008859e91d1a57d1e758663efb1e06ad3d61e
+- failed top level revert
