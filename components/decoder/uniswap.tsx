@@ -62,11 +62,11 @@ abstract class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapRes
             <>
                 <TraceTreeNodeLabel nodeType={'swap'} nodeColor={'#645e9d'} />
                 &nbsp;recipient=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.recipient} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.recipient} />
                 ,&nbsp;from={this.formatTokenAmount(opts, result.firstToken, result.inputAmount)}
                 ,&nbsp;to={this.formatTokenAmount(opts, result.lastToken, result.outputAmount)}
                 ,&nbsp;actor=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.actor} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />
             </>
         );
     }
@@ -176,12 +176,12 @@ abstract class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2Route
             <>
                 <TraceTreeNodeLabel nodeType={'add liquidity'} nodeColor={'#6c969d'} />
                 &nbsp;recipient=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.recipient} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.recipient} />
                 ,&nbsp;amountA={this.formatTokenAmount(opts, result.tokenA, result.tokenAAmount)}
                 ,&nbsp;amountB={this.formatTokenAmount(opts, result.tokenB, result.tokenBAmount)}
                 ,&nbsp;amountOut={this.formatTokenAmount(opts, result.pool, result.liquidity)}
                 ,&nbsp;actor=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.actor} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />
             </>
         );
     }
@@ -234,7 +234,7 @@ export class UniswapV2AddLiquidityEth extends UniswapV2RouterAddLiquidityDecoder
             recipient: inputs[4].toString(),
             pool: subcalls[3].to,
             tokenA: inputs[0],
-            tokenB: '0xeeeeeeeeeeeeeeeeeeEeeEEEeeeeEeeeeeeeEEeE',
+            tokenB: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
             tokenAAmount: outputs[0],
             tokenBAmount: outputs[1],
             liquidity: outputs[2],

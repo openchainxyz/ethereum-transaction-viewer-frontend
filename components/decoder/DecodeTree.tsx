@@ -1,15 +1,16 @@
-import { DecodeNode, format } from './decoder';
+import {DecodeNode, format} from './decoder';
 import TreeView from '@mui/lab/TreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import * as React from 'react';
-import { Typography } from '@mui/material';
-import { TraceTreeItem } from '../TraceTreeItem';
-import { DecodeResult } from './types';
-import { PriceMetadata, TokenMetadata } from '../types';
+import {Typography} from '@mui/material';
+import {TraceTreeItem} from '../TraceTreeItem';
+import {DecodeResult} from './types';
+import {PriceMetadata, TokenMetadata} from '../types';
 
 export type DecodeTreeProps = {
     decoded: DecodeResult;
+    chain: string,
     labels: Record<string, string>;
     prices: PriceMetadata;
     tokens: TokenMetadata;
@@ -36,7 +37,12 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                 <TraceTreeItem
                     key={id}
                     nodeId={id}
-                    treeContent={format(v, { labels: props.labels, prices: props.prices, tokens: props.tokens })}
+                    treeContent={format(v, {
+                        chain: props.chain,
+                        labels: props.labels,
+                        prices: props.prices,
+                        tokens: props.tokens
+                    })}
                 >
                     {results}
                 </TraceTreeItem>
@@ -59,8 +65,8 @@ export const DecodeTree = (props: DecodeTreeProps) => {
         <>
             <TreeView
                 aria-label="rich object"
-                defaultCollapseIcon={<ExpandMoreIcon />}
-                defaultExpandIcon={<ChevronRightIcon />}
+                defaultCollapseIcon={<ExpandMoreIcon/>}
+                defaultExpandIcon={<ChevronRightIcon/>}
                 expanded={expanded}
                 onNodeToggle={(event: React.SyntheticEvent, nodeIds: string[]) => {
                     setExpanded(nodeIds);

@@ -40,6 +40,7 @@ export const ParamFlatView = (props: ParamFlatViewProps) => {
                     } else {
                         rendered = (
                             <DataRenderer
+                                chain={props.traceMetadata.chain}
                                 labels={props.traceMetadata.labels}
                                 decodedData={value}
                                 preferredType={param.format()}

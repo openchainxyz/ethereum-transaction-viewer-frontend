@@ -82,7 +82,8 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
         >
             {vars.map((v, i) => {
                 let dataRenderer = (
-                    <DataRenderer labels={props.traceMetadata.labels} data={v.value} preferredType={v.type} />
+                    <DataRenderer
+                        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.value} preferredType={v.type} />
                 );
 
                 return (
@@ -138,7 +139,8 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
                     return (
                         <React.Fragment key={i}>
                             {v.name}:&nbsp;
-                            <DataRenderer labels={props.traceMetadata.labels} data={v.value} preferredType={v.type} />
+                            <DataRenderer
+                                chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.value} preferredType={v.type} />
                         </React.Fragment>
                     );
                 })}

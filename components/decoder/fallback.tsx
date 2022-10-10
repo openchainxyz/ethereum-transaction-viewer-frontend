@@ -57,9 +57,9 @@ export class ERC20Decoder extends Decoder<ERC20DecoderResult> {
             <>
                 <TraceTreeNodeLabel nodeType={'transfer'} nodeColor={'#392b58'} />
                 &nbsp;from=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.from} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />
                 ,&nbsp;to=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.to} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />
                 ,&nbsp;amount={this.formatTokenAmount(opts, result.token, result.amount)}
             </>
         );
@@ -98,9 +98,9 @@ export class ValueTransferDecoder extends Decoder<ValueTransferDecoderResult> {
             <>
                 <TraceTreeNodeLabel nodeType={'transfer'} nodeColor={'#392b58'} />
                 &nbsp;from=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.from} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />
                 ,&nbsp;to=
-                <DataRenderer labels={opts.labels} preferredType={'address'} data={result.to} />
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />
                 ,&nbsp;amount=
                 {this.formatTokenAmount(opts, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', result.amount)}
             </>

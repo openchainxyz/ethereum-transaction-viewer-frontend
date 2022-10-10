@@ -16,6 +16,8 @@ export const precompiles: Record<string, Precompile> = {
         ),
         parseInput: (data: string) => {
             data = data.substring(2);
+            if (data.length < 64*4) return [];
+
             return [
                 '0x' + data.substring(0, 64),
                 BigNumber.from('0x' + data.substring(64, 64 * 2)),
@@ -25,6 +27,7 @@ export const precompiles: Record<string, Precompile> = {
         },
         parseOutput: (data: string) => {
             data = data.substring(2);
+            if (data.length < 12*2) return [];
             return [ethers.utils.getAddress(data.substring(12 * 2))];
         },
     },

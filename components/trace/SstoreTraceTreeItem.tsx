@@ -83,10 +83,12 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
         >
             {vars.map((v, i) => {
                 let oldDataRenderer = (
-                    <DataRenderer labels={props.traceMetadata.labels} data={v.oldValue} preferredType={v.type} />
+                    <DataRenderer
+                        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.oldValue} preferredType={v.type} />
                 );
                 let newDataRenderer = (
-                    <DataRenderer labels={props.traceMetadata.labels} data={v.newValue} preferredType={v.type} />
+                    <DataRenderer
+                        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.newValue} preferredType={v.type} />
                 );
 
                 return (
@@ -144,10 +146,12 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
             <WithSeparator separator={<>,&nbsp;</>}>
                 {vars.map((v, i) => {
                     let oldDataRenderer = (
-                        <DataRenderer labels={props.traceMetadata.labels} data={v.oldValue} preferredType={v.type} />
+                        <DataRenderer
+                            chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.oldValue} preferredType={v.type} />
                     );
                     let newDataRenderer = (
-                        <DataRenderer labels={props.traceMetadata.labels} data={v.newValue} preferredType={v.type} />
+                        <DataRenderer
+                            chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.newValue} preferredType={v.type} />
                     );
                     if (v.oldValue === v.newValue) {
                         return (

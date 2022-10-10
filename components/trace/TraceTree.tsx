@@ -60,8 +60,8 @@ export const TraceTree = (props: TraceTreeProps) => {
         setShowStorageChanges(newShowStorageChanges);
     };
 
-    let requestStorageMetadata = (affectedNode: TraceEntryCallable, actualNode: TraceEntryCallable) => {
-        fetch(`${apiEndpoint()}/api/v1/storage/${actualNode.to}/${actualNode.codehash}`)
+    let requestStorageMetadata = (chain: string, affectedNode: TraceEntryCallable, actualNode: TraceEntryCallable) => {
+        fetch(`${apiEndpoint()}/api/v1/storage/${chain}/${actualNode.to}/${actualNode.codehash}`)
             .then((res) => res.json())
             .then((res) => {
                 if (res['ok']) {
@@ -108,6 +108,7 @@ export const TraceTree = (props: TraceTreeProps) => {
                                                             <>
                                                                 {baseSlotInfo.fullName}[
                                                                 <DataRenderer
+                                                                    chain={traceMetadata.chain}
                                                                     labels={traceMetadata.labels}
                                                                     data={slotInfo.mappingKey}
                                                                     preferredType={
@@ -128,6 +129,7 @@ export const TraceTree = (props: TraceTreeProps) => {
                                                         <>
                                                             {baseSlotInfo.fullName}[
                                                             <DataRenderer
+                                                                chain={traceMetadata.chain}
                                                                 labels={traceMetadata.labels}
                                                                 data={slotInfo.mappingKey}
                                                                 preferredType={
@@ -147,6 +149,7 @@ export const TraceTree = (props: TraceTreeProps) => {
                                                     <>
                                                         {baseSlotInfo.fullName}[
                                                         <DataRenderer
+                                                            chain={traceMetadata.chain}
                                                             labels={traceMetadata.labels}
                                                             data={slotInfo.mappingKey}
                                                             preferredType={

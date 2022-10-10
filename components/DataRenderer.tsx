@@ -4,6 +4,7 @@ import { TraceMetadata } from './types';
 import * as React from 'react';
 import { SpanIconButton } from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import {getChain} from "./Chains";
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
     if (paramType.indexed && value.hash) {
@@ -19,6 +20,7 @@ const stringifyValue = (paramType: ParamType, value: any): string => {
 
 let formatValueWithParamType = (
     paramType: ParamType,
+    chain: string,
     value: string,
     truncate: boolean,
     makeLink: boolean,
@@ -33,7 +35,7 @@ let formatValueWithParamType = (
 
         if (makeLink) {
             return (
-                <a href={`https://etherscan.io/address/${address}`} target={'_blank'} rel={'noopener noreferrer'}>
+                <a href={`${getChain(chain)?.blockexplorerUrl}/address/${address}`} target={'_blank'} rel={'noopener noreferrer'}>
                     {label}
                 </a>
             );
@@ -50,6 +52,7 @@ let formatValueWithParamType = (
 };
 
 type DataRendererProps = {
+    chain?: string;
     labels: Record<string, string>;
     data?: string;
     decodedData?: any;
@@ -62,6 +65,7 @@ type DataRendererProps = {
 export const DataRenderer = (props: DataRendererProps) => {
     const abiCoder = ethers.utils.defaultAbiCoder;
 
+    let chain = props.chain || 'ethereum';
     let preferredType = props.preferredType || 'bytes32';
     let decodedData = props.decodedData;
     let data = props.data;
@@ -124,7 +128,7 @@ export const DataRenderer = (props: DataRendererProps) => {
             );
         }
 
-        let rendered = formatValueWithParamType(paramType, stringified, truncate || false, makeLink, props.labels);
+        let rendered = formatValueWithParamType(paramType, chain, stringified, truncate || false, makeLink, props.labels);
         return (
             <>
                 {copyButton}

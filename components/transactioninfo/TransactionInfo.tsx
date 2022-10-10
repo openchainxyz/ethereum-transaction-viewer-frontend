@@ -7,6 +7,7 @@ import { BigNumber } from 'ethers';
 import { formatUnitsSmartly, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { PriceMetadata, TransactionInfoResponse } from '../types';
+import {getChain} from "../Chains";
 
 type TransactionAttributeGridProps = {
     children?: JSX.Element[];
@@ -49,10 +50,14 @@ export const TransactionAttribute = (props: TransactionAttributeProps) => {
 type TransactionInfoProps = {
     transactionResponse: TransactionInfoResponse;
     priceMetadata: PriceMetadata;
+    chain: string;
 };
 
 export const TransactionInfo = (props: TransactionInfoProps) => {
-    const { transactionResponse, priceMetadata } = props;
+    const { transactionResponse, priceMetadata, chain } = props;
+
+    const chainInfo = getChain(chain);
+    if (!chainInfo) throw new Error("weird");
 
     let blockTimestamp = DateTime.fromSeconds(transactionResponse.metadata.timestamp);
 
@@ -97,14 +102,14 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
         transactionStatus = 'Unknown';
     }
 
-    let historicalEthPrice = priceMetadata.historicalPrices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'];
-    let currentEthPrice = priceMetadata.currentPrices['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'];
+    let historicalEthPrice = priceMetadata.historicalPrices[chainInfo.nativeTokenAddress];
+    let currentEthPrice = priceMetadata.currentPrices[chainInfo.nativeTokenAddress];
 
     let transactionValue = transactionResponse.transaction.value;
-    let transactionFee = transactionResponse.receipt.gasUsed.mul(transactionResponse.receipt.effectiveGasPrice);
+    let transactionFee = transactionResponse.receipt.gasUsed.mul(transactionResponse.receipt.effectiveGasPrice || transactionResponse.transaction.gasPrice);
 
-    let transactionValueStr = formatUnitsSmartly(transactionValue);
-    let transactionFeeStr = formatUnitsSmartly(transactionFee);
+    let transactionValueStr = formatUnitsSmartly(transactionValue, chainInfo.nativeSymbol);
+    let transactionFeeStr = formatUnitsSmartly(transactionFee, chainInfo.nativeSymbol);
 
     let transactionValueUSD;
     let transactionFeeUSD;
@@ -155,7 +160,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                         </TransactionAttribute>
                         <TransactionAttribute name={'Block'}>
                             <a
-                                href={`https://etherscan.io/block/${transactionResponse.receipt.blockNumber}`}
+                                href={`${chainInfo.blockexplorerUrl}/block/${transactionResponse.receipt.blockNumber}`}
                                 target={'_blank'}
                                 rel={'noreferrer noopener'}
                             >
@@ -166,6 +171,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'From'}>
                             <DataRenderer
+                                chain={chain}
                                 showCopy={true}
                                 labels={transactionResponse.metadata.labels}
                                 preferredType={'address'}
@@ -174,6 +180,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                         </TransactionAttribute>
                         <TransactionAttribute name={transactionResponse.transaction.to ? 'To' : 'Created'}>
                             <DataRenderer
+                                chain={chain}
                                 showCopy={true}
                                 labels={transactionResponse.metadata.labels}
                                 preferredType={'address'}

@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
+import {BigNumber, ethers} from 'ethers';
 import {
     PriceMetadata,
     TokenMetadata,
@@ -8,11 +8,12 @@ import {
     TraceMetadata,
     TraceResult,
 } from '../types';
-import { defaultAbiCoder, Result } from '@ethersproject/abi';
-import { DataRenderer } from '../DataRenderer';
+import {defaultAbiCoder, Result} from '@ethersproject/abi';
+import {DataRenderer} from '../DataRenderer';
 import * as React from 'react';
-import { Tooltip } from '@mui/material';
-import { formatUsd } from '../helpers';
+import {Tooltip} from '@mui/material';
+import {formatUsd} from '../helpers';
+import {getChain} from "../Chains";
 
 export type DecodeResultCommon = {
     type: string;
@@ -42,6 +43,7 @@ export type DecodeState = {
 };
 
 export type DecodeFormatOpts = {
+    chain: string,
     labels: Record<string, string>;
     prices: PriceMetadata;
     tokens: TokenMetadata;
@@ -93,9 +95,12 @@ export abstract class Decoder<T extends DecodeResultCommon> {
 
     formatTokenAmount(opts: DecodeFormatOpts, token: string, amount: BigNumber): JSX.Element {
         token = token.toLowerCase();
+        if (token === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+            token = getChain(opts.chain)?.nativeTokenAddress || token;
+        }
 
         let amountFormatted = amount.toString();
-        let address = <DataRenderer labels={opts.labels} preferredType={'address'} data={token} />;
+        let address = <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={token}/>;
         let price;
 
         let tokenInfo = opts.tokens.tokens[token];
@@ -105,7 +110,7 @@ export abstract class Decoder<T extends DecodeResultCommon> {
             }
             if (tokenInfo.symbol !== undefined) {
                 address = (
-                    <DataRenderer labels={{ [token]: tokenInfo.symbol }} preferredType={'address'} data={token} />
+                    <DataRenderer chain={opts.chain} labels={{[token]: tokenInfo.symbol}} preferredType={'address'} data={token}/>
                 );
             }
         }

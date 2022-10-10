@@ -27,6 +27,7 @@ import { SpanIconButton } from '../SpanIconButton';
 import { useErrorFragment, useFunctionFragment } from '../hooks/useFragment';
 import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
+import {getChain} from "../Chains";
 
 const callColor = {
     call: '#2c2421',
@@ -39,7 +40,7 @@ type CallTraceTreeItemProps = {
     traceResult: TraceResult;
     traceMetadata: TraceMetadata;
     storageMetadata: StorageMetadata;
-    requestStorageMetadata: (affectedCall: TraceEntryCallable, actualCall: TraceEntryCallable) => void;
+    requestStorageMetadata: (chain: string, affectedCall: TraceEntryCallable, actualCall: TraceEntryCallable) => void;
     showStorageChanges: boolean;
     setShowStorageChanges: (show: boolean) => void;
     expandTo: (id: string) => void;
@@ -213,6 +214,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     dialogTitle = (
         <>
             <DataRenderer
+                chain={props.traceMetadata.chain}
                 labels={props.traceMetadata.labels}
                 data={node.to}
                 preferredType={'address'}
@@ -305,7 +307,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
                     if (!showStorageChanges && storageNode) {
                         let [storageParent, path] = findAffectedContract(traceMetadata, storageNode);
                         path.forEach((node) => {
-                            props.requestStorageMetadata(storageParent, node);
+                            props.requestStorageMetadata(traceResult.chain, storageParent, node);
                         });
                     }
 
@@ -318,6 +320,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     let address;
     let addressContent = (
         <DataRenderer
+            chain={props.traceMetadata.chain}
             labels={props.traceMetadata.labels}
             data={node.to}
             preferredType={'address'}
@@ -333,7 +336,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
 
     let value = BigNumber.from(node.value);
     if (value.gt(0)) {
-        valueNode = <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ETH]`}</span>;
+        valueNode = <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${getChain(traceResult.chain)?.nativeSymbol}]`}</span>;
     }
 
     let treeContent = (

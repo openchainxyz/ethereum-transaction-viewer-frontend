@@ -8,10 +8,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { theme } from '../components/helpers';
+import {SupportedChains} from "../components/Chains";
 
 export default function Home() {
     const router = useRouter();
-    const [query, setQuery] = React.useState('');
+    const [chain, setChain] = React.useState('');
+    const [txhash, setTxhash] = React.useState('');
 
     return (
         <ThemeProvider theme={theme}>
@@ -64,27 +66,34 @@ export default function Home() {
                     </Box>
                     <div className="flex flex-row w-full place-content-center">
                         <div
-                            className="flex-row flex place-content-center relative w-4/5 my-5 text-[#606161]"
+                            className="flex-row flex place-content-center relative w-full my-5 text-[#606161]"
                             style={{ fontFamily: 'RiformaLL' }}
                         >
+                            <select
+                                className="outline-1 outline outline-[#0000002d] py-2 px-3"
+                                onChange={(event) => setChain(event.target.value)}
+                            >
+                                {SupportedChains.map(v => {
+                                    return <option key={v.id} value={v.id}>{v.displayName}</option>;
+                                })}
+                            </select>
                             <input
                                 id="search"
                                 type="text"
                                 placeholder="Enter txhash..."
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
+                                value={txhash}
+                                onChange={(event) => setTxhash(event.target.value)}
                                 onKeyUp={(event) => {
                                     if (event.key === 'Enter') {
-                                        router.push(`/ethereum/${query}`);
+                                        router.push(`/${chain}/${txhash}`);
                                     }
                                 }}
-                                autoFocus={true}
                                 className="w-full outline-1 outline outline-[#0000002d] py-2 px-3"
                             />
                             <button
                                 className="my-auto flex  hover:bg-[#00e1003a] h-full outline-1 outline outline-[#0000002d] rounded-none text-lg py-2 px-3 z-10 ml-[1px] hover:text-black"
                                 onClick={() => {
-                                    router.push(`/ethereum/${query}`);
+                                    router.push(`/${chain}/${txhash}`);
                                 }}
                             >
                                 <h1 className="my-auto">View</h1>
