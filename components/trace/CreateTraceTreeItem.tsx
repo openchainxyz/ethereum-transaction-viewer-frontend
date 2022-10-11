@@ -23,7 +23,7 @@ import { TraceTreeDialog } from '../TraceTreeDialog';
 import { chunkString, findAffectedContract } from '../helpers';
 import { LogTraceTreeItem } from './LogTraceTreeItem';
 import { SpanIconButton } from '../SpanIconButton';
-import {getChain} from "../Chains";
+import { getChain } from '../Chains';
 
 type CreateTraceTreeItemProps = {
     traceResult: TraceResult;
@@ -66,8 +66,14 @@ export const CreateTraceTreeItem = (props: CreateTraceTreeItemProps) => {
     let dialogTitle: JSX.Element;
     let dialogContent: JSX.Element;
 
-    let addressContent = <DataRenderer
-        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={node.to} preferredType={'address'} />;
+    let addressContent = (
+        <DataRenderer
+            chain={props.traceMetadata.chain}
+            labels={props.traceMetadata.labels}
+            data={node.to}
+            preferredType={'address'}
+        />
+    );
 
     let functionParams = null;
 
@@ -284,7 +290,11 @@ export const CreateTraceTreeItem = (props: CreateTraceTreeItemProps) => {
 
     let value = BigNumber.from(node.value);
     if (value.gt(0)) {
-        valueNode = <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${getChain(traceResult.chain)?.nativeSymbol}]`}</span>;
+        valueNode = (
+            <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${
+                getChain(traceResult.chain)?.nativeSymbol
+            }]`}</span>
+        );
     }
 
     let treeContent = (

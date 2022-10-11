@@ -84,11 +84,19 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
             {vars.map((v, i) => {
                 let oldDataRenderer = (
                     <DataRenderer
-                        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.oldValue} preferredType={v.type} />
+                        chain={props.traceMetadata.chain}
+                        labels={props.traceMetadata.labels}
+                        data={v.oldValue}
+                        preferredType={v.type}
+                    />
                 );
                 let newDataRenderer = (
                     <DataRenderer
-                        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.newValue} preferredType={v.type} />
+                        chain={props.traceMetadata.chain}
+                        labels={props.traceMetadata.labels}
+                        data={v.newValue}
+                        preferredType={v.type}
+                    />
                 );
 
                 return (
@@ -147,11 +155,19 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                 {vars.map((v, i) => {
                     let oldDataRenderer = (
                         <DataRenderer
-                            chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.oldValue} preferredType={v.type} />
+                            chain={props.traceMetadata.chain}
+                            labels={props.traceMetadata.labels}
+                            data={v.oldValue}
+                            preferredType={v.type}
+                        />
                     );
                     let newDataRenderer = (
                         <DataRenderer
-                            chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} data={v.newValue} preferredType={v.type} />
+                            chain={props.traceMetadata.chain}
+                            labels={props.traceMetadata.labels}
+                            data={v.newValue}
+                            preferredType={v.type}
+                        />
                     );
                     if (v.oldValue === v.newValue) {
                         return (

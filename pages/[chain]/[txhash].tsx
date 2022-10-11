@@ -1,14 +1,18 @@
 import * as React from 'react';
 import {
     Alert,
-    AlertColor, Button,
+    AlertColor,
+    Button,
     Collapse,
-    FormControl, Grid,
+    FormControl,
+    Grid,
     IconButton,
-    MenuItem, Paper,
-    Select, TextField,
+    MenuItem,
+    Paper,
+    Select,
+    TextField,
     ThemeProvider,
-    Typography
+    Typography,
 } from '@mui/material';
 import {
     PriceMetadata,
@@ -22,28 +26,28 @@ import {
     TraceResult,
     TransactionInfoResponse,
 } from '../../components/types';
-import {apiEndpoint, findAffectedContract, theme} from '../../components/helpers';
-import {precompiles} from '../../components/precompiles';
-import {BigNumber, ethers} from 'ethers';
-import {knownSlots} from '../../components/knownSlots';
+import { apiEndpoint, findAffectedContract, theme } from '../../components/helpers';
+import { precompiles } from '../../components/precompiles';
+import { BigNumber, ethers } from 'ethers';
+import { knownSlots } from '../../components/knownSlots';
 import BN from 'bn.js';
 import styles from '../../styles/Home.module.css';
 import Head from 'next/head';
-import {Box} from '@mui/system';
+import { Box } from '@mui/system';
 import Image from 'next/image';
 import CloseIcon from '@mui/icons-material/Close';
-import {useRouter} from 'next/router';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import {Formatter, JsonRpcBatchProvider} from '@ethersproject/providers';
-import {TransactionInfo} from '../../components/transactioninfo/TransactionInfo';
-import {decode, DecodeNode} from '../../components/decoder/decoder';
-import {TraceTree} from '../../components/trace/TraceTree';
-import {DecodeTree} from '../../components/decoder/DecodeTree';
-import {DecodeResult} from '../../components/decoder/types';
-import {defaultAbiCoder} from '@ethersproject/abi';
-import {ParamType} from 'ethers/lib/utils';
-import {getChain, SupportedChains} from "../../components/Chains";
-import {LoadingButton} from "@mui/lab";
+import { Formatter, JsonRpcBatchProvider } from '@ethersproject/providers';
+import { TransactionInfo } from '../../components/transactioninfo/TransactionInfo';
+import { decode, DecodeNode } from '../../components/decoder/decoder';
+import { TraceTree } from '../../components/trace/TraceTree';
+import { DecodeTree } from '../../components/decoder/DecodeTree';
+import { DecodeResult } from '../../components/decoder/types';
+import { defaultAbiCoder } from '@ethersproject/abi';
+import { ParamType } from 'ethers/lib/utils';
+import { getChain, SupportedChains } from '../../components/Chains';
+import { LoadingButton } from '@mui/lab';
 import SearchIcon from '@mui/icons-material/Search';
 
 type APIResponseError = {
@@ -58,7 +62,7 @@ type APIResponseSuccess<T> = {
 
 type APIResponse<T> = APIResponseError | APIResponseSuccess<T>;
 
-const doApiRequest = async <T, >(path: string, init?: RequestInit): Promise<T> => {
+const doApiRequest = async <T,>(path: string, init?: RequestInit): Promise<T> => {
     return fetch(`${apiEndpoint()}${path}`, init)
         .then((res) => res.json())
         .then((json) => json as APIResponse<T>)
@@ -73,25 +77,25 @@ const doApiRequest = async <T, >(path: string, init?: RequestInit): Promise<T> =
 const defaultTokenMetadata = (): TokenMetadata => {
     return {
         tokens: SupportedChains.reduce((o, chain) => {
-            return {...o, [chain.nativeTokenAddress]: {symbol: chain.nativeSymbol, decimals: 18}};
+            return { ...o, [chain.nativeTokenAddress]: { symbol: chain.nativeSymbol, decimals: 18 } };
         }, {}),
-    }
-}
+    };
+};
 
 const fetchCoingeckoPrices = (ids: string[], when: number): Promise<[any, any]> => {
     return Promise.all([
-        fetch(`https://coins.llama.fi/prices/current/${ids.join(",")}`)
+        fetch(`https://coins.llama.fi/prices/current/${ids.join(',')}`)
             .then((resp) => resp.json())
             .then((resp) => resp.coins),
-        fetch(`https://coins.llama.fi/prices/historical/${when}/${ids.join(",")}`)
+        fetch(`https://coins.llama.fi/prices/historical/${when}/${ids.join(',')}`)
             .then((resp) => resp.json())
             .then((resp) => resp.coins),
     ]);
-}
+};
 
 export default function TransactionViewer() {
     const router = useRouter();
-    const {chain: queryChain, txhash: queryTxhash} = router.query;
+    const { chain: queryChain, txhash: queryTxhash } = router.query;
 
     const [chain, setChain] = React.useState('');
     const [txhash, setTxhash] = React.useState('');
@@ -160,19 +164,24 @@ export default function TransactionViewer() {
 
                 setTransactionResponse(resp);
 
-                fetchCoingeckoPrices([chainConfig.coingeckoId], resp.metadata.timestamp)
-                    .then(([current, historical]) => {
+                fetchCoingeckoPrices([chainConfig.coingeckoId], resp.metadata.timestamp).then(
+                    ([current, historical]) => {
                         setPriceMetadata((prevState) => {
-                            let newState = {...prevState};
-                            newState.currentPrices[chainConfig.nativeTokenAddress] = BigNumber.from(
-                                (current[chainConfig.coingeckoId].price * 10000) | 1,
-                            );
-                            newState.historicalPrices[chainConfig.nativeTokenAddress] = BigNumber.from(
-                                (historical[chainConfig.coingeckoId].price * 10000) | 1,
-                            );
+                            let newState = { ...prevState };
+                            if (current[chainConfig.coingeckoId]) {
+                                newState.currentPrices[chainConfig.nativeTokenAddress] = BigNumber.from(
+                                    (current[chainConfig.coingeckoId].price * 10000) | 1,
+                                );
+                            }
+                            if (historical[chainConfig.coingeckoId]) {
+                                newState.historicalPrices[chainConfig.nativeTokenAddress] = BigNumber.from(
+                                    (historical[chainConfig.coingeckoId].price * 10000) | 1,
+                                );
+                            }
                             return newState;
                         });
-                    });
+                    },
+                );
             })
             .catch((e) => {
                 setIsSearching(false);
@@ -425,14 +434,14 @@ export default function TransactionViewer() {
 
                     if (historicalPrice) {
                         setPriceMetadata((prevState) => {
-                            let newState = {...prevState};
+                            let newState = { ...prevState };
                             newState.currentPrices[token] = BigNumber.from((currentPrice * 10000) | 1);
                             return newState;
                         });
                     }
                     if (historicalPrice) {
                         setPriceMetadata((prevState) => {
-                            let newState = {...prevState};
+                            let newState = { ...prevState };
                             newState.historicalPrices[token] = BigNumber.from((historicalPrice * 10000) | 1);
                             return newState;
                         });
@@ -475,8 +484,7 @@ export default function TransactionViewer() {
                             try {
                                 let results = defaultAbiCoder.decode([ParamType.from('string')], symbol);
                                 parsedSymbol = results[0].toString();
-                            } catch {
-                            }
+                            } catch {}
                         }
                     }
 
@@ -484,8 +492,8 @@ export default function TransactionViewer() {
                         newMeta.symbol = parsedSymbol;
                     }
                     setTokenMetadata((prevState) => {
-                        let newState = {...prevState};
-                        newState.tokens[token] = {...newState.tokens[token], ...newMeta};
+                        let newState = { ...prevState };
+                        newState.tokens[token] = { ...newState.tokens[token], ...newMeta };
                         return newState;
                     });
                 })
@@ -498,32 +506,42 @@ export default function TransactionViewer() {
     let transactionInfoGrid = React.useMemo(() => {
         if (!transactionResponse) return null;
 
-        return <TransactionInfo transactionResponse={transactionResponse} priceMetadata={priceMetadata} chain={transactionResponse.metadata.chain}/>;
+        return (
+            <TransactionInfo
+                transactionResponse={transactionResponse}
+                priceMetadata={priceMetadata}
+                chain={transactionResponse.metadata.chain}
+            />
+        );
     }, [transactionResponse, priceMetadata, chain]);
 
     let transactionActions;
     if (decodedActions) {
-        transactionActions = <DecodeTree
-            chain={traceMetadata ? traceMetadata.chain : ''}
-            decoded={decodedActions}
-            labels={traceMetadata ? traceMetadata.labels : {}}
-            prices={priceMetadata}
-            tokens={tokenMetadata}
-        />;
+        transactionActions = (
+            <DecodeTree
+                chain={traceMetadata ? traceMetadata.chain : ''}
+                decoded={decodedActions}
+                labels={traceMetadata ? traceMetadata.labels : {}}
+                prices={priceMetadata}
+                tokens={tokenMetadata}
+            />
+        );
     }
 
     let traceTree;
     if (traceResult && traceMetadata && storageMetadata) {
-        traceTree = <TraceTree
-            traceResult={traceResult}
-            traceMetadata={traceMetadata}
-            showStorageChanges={showStorageChanges}
-            setShowStorageChanges={setShowStorageChanges}
-            expanded={expanded}
-            setExpanded={setExpanded}
-            storageMetadata={storageMetadata}
-            setStorageMetadata={setStorageMetadata}
-        />;
+        traceTree = (
+            <TraceTree
+                traceResult={traceResult}
+                traceMetadata={traceMetadata}
+                showStorageChanges={showStorageChanges}
+                setShowStorageChanges={setShowStorageChanges}
+                expanded={expanded}
+                setExpanded={setExpanded}
+                storageMetadata={storageMetadata}
+                setStorageMetadata={setStorageMetadata}
+            />
+        );
     }
 
     return (
@@ -531,18 +549,18 @@ export default function TransactionViewer() {
             <div className={styles.container}>
                 <Head>
                     <title>Ethereum Transaction Viewer</title>
-                    <meta name="description" content="View and trace Ethereum transactions"/>
-                    <meta property="og:type" content="website"/>
-                    <meta property="og:title" content="Ethereum Transaction Viewer"/>
-                    <meta property="og:description" content="View and trace Ethereum transactions"/>
-                    <meta property="og:image" content="https://tx.eth.samczsun.com/favicon.png"/>
-                    <meta property="twitter:card" content="summary"/>
-                    <meta property="twitter:title" content="Ethereum Transaction Viewer"/>
-                    <meta property="twitter:description" content="View and trace Ethereum transactions"/>
-                    <meta property="twitter:url" content="https://tx.eth.samczsun.com"/>
-                    <meta property="twitter:image" content="https://tx.eth.samczsun.com/favicon.png"/>
-                    <meta property="twitter:site" content="@samczsun"/>
-                    <link rel="icon" href="/favicon.png"/>
+                    <meta name="description" content="View and trace Ethereum transactions" />
+                    <meta property="og:type" content="website" />
+                    <meta property="og:title" content="Ethereum Transaction Viewer" />
+                    <meta property="og:description" content="View and trace Ethereum transactions" />
+                    <meta property="og:image" content="https://tx.eth.samczsun.com/favicon.png" />
+                    <meta property="twitter:card" content="summary" />
+                    <meta property="twitter:title" content="Ethereum Transaction Viewer" />
+                    <meta property="twitter:description" content="View and trace Ethereum transactions" />
+                    <meta property="twitter:url" content="https://tx.eth.samczsun.com" />
+                    <meta property="twitter:image" content="https://tx.eth.samczsun.com/favicon.png" />
+                    <meta property="twitter:site" content="@samczsun" />
+                    <link rel="icon" href="/favicon.png" />
                 </Head>
                 <div className="max-w-[900px] mx-auto text-[#19232D] relative">
                     <Box className="flex flex-col" justifyContent="left">
@@ -578,15 +596,19 @@ export default function TransactionViewer() {
                     <div className="flex flex-row w-full place-content-center">
                         <div
                             className="flex-row flex place-content-center relative w-full my-5 text-[#606161]"
-                            style={{fontFamily: 'RiformaLL'}}
+                            style={{ fontFamily: 'RiformaLL' }}
                         >
                             <select
                                 className="outline-1 outline outline-[#0000002d] py-2 px-3"
                                 value={chain}
                                 onChange={(event) => setChain(event.target.value)}
                             >
-                                {SupportedChains.map(v => {
-                                    return <option key={v.id} value={v.id}>{v.displayName}</option>;
+                                {SupportedChains.map((v) => {
+                                    return (
+                                        <option key={v.id} value={v.id}>
+                                            {v.displayName}
+                                        </option>
+                                    );
                                 })}
                             </select>
                             <input
@@ -629,10 +651,10 @@ export default function TransactionViewer() {
                                             }));
                                         }}
                                     >
-                                        <CloseIcon fontSize="inherit"/>
+                                        <CloseIcon fontSize="inherit" />
                                     </IconButton>
                                 }
-                                sx={{mb: 2}}
+                                sx={{ mb: 2 }}
                             >
                                 {alertData.message}
                             </Alert>

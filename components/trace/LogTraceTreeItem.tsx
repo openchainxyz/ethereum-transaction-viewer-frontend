@@ -178,7 +178,12 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
             {props.showAddress ? (
                 <>
                     <DataRenderer
-                        chain={props.traceMetadata.chain} labels={props.traceMetadata.labels} preferredType={'address'} data={parentNode.to} />.
+                        chain={props.traceMetadata.chain}
+                        labels={props.traceMetadata.labels}
+                        preferredType={'address'}
+                        data={parentNode.to}
+                    />
+                    .
                 </>
             ) : null}
             {eventName}({eventParams})

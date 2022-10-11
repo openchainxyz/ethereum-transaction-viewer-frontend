@@ -9,6 +9,7 @@ export type ERC20DecoderResult = {
     type: string;
     from: string;
     to: string;
+    actor: string;
     token: string;
     amount: BigNumber;
 };
@@ -47,21 +48,23 @@ export class ERC20Decoder extends Decoder<ERC20DecoderResult> {
             type: this.name,
             from: values[0].toString(),
             to: values[1].toString(),
+            actor: parentNode.from,
             token: parent.to,
             amount: values[2],
         };
     }
 
     format(result: ERC20DecoderResult, opts: DecodeFormatOpts): JSX.Element {
-        return (
-            <>
-                <TraceTreeNodeLabel nodeType={'transfer'} nodeColor={'#392b58'} />
-                &nbsp;from=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />
-                ,&nbsp;to=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />
-                ,&nbsp;amount={this.formatTokenAmount(opts, result.token, result.amount)}
-            </>
+        return this.renderResult(
+            'transfer',
+            '#392b58',
+            ['from', 'to', 'amount', 'actor'],
+            [
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />,
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />,
+                this.formatTokenAmount(opts, result.token, result.amount),
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />,
+            ],
         );
     }
 }
@@ -94,16 +97,15 @@ export class ValueTransferDecoder extends Decoder<ValueTransferDecoderResult> {
     }
 
     format(result: ValueTransferDecoderResult, opts: DecodeFormatOpts): JSX.Element {
-        return (
-            <>
-                <TraceTreeNodeLabel nodeType={'transfer'} nodeColor={'#392b58'} />
-                &nbsp;from=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />
-                ,&nbsp;to=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />
-                ,&nbsp;amount=
-                {this.formatTokenAmount(opts, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', result.amount)}
-            </>
+        return this.renderResult(
+            'transfer',
+            '#392b58',
+            ['from', 'to', 'amount'],
+            [
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />,
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />,
+                this.formatTokenAmount(opts, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', result.amount),
+            ],
         );
     }
 }

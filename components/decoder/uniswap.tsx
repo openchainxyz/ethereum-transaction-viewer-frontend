@@ -2,27 +2,46 @@ import { TraceEntry, TraceEntryCall, TraceEntryCallable } from '../types';
 import { DecodeFormatOpts, Decoder, DecodeResult, DecodeState } from './types';
 import { TraceTreeNodeLabel } from '../TraceTreeItem';
 import { DataRenderer } from '../DataRenderer';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import * as React from 'react';
 import { Result } from '@ethersproject/abi';
 
 export type UniswapV2RouterSwapResult = {
     type: string;
+
     actor: string;
     recipient: string;
-    firstToken: string;
-    lastToken: string;
-    inputAmount: BigNumber;
-    outputAmount: BigNumber;
+
+    tokenIn: string;
+    tokenOut: string;
+
+    amountIn: BigNumber;
+    amountOut: BigNumber;
 };
 
-// remove liquidity: 392b58
-abstract class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResult> {
-    selector: string;
+export class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResult> {
+    swapFunctions = {
+        'swapExactTokensForTokens(uint256,uint256,address[],address,uint256)':
+            this.decodeSwapExactTokensForTokens.bind(this),
+        'swapTokensForExactTokens(uint256,uint256,address[],address,uint256)':
+            this.decodeSwapTokensForExactTokens.bind(this),
+        'swapExactETHForTokens(uint256,address[],address,uint256)': this.decodeSwapExactETHForTokens.bind(this),
+        'swapTokensForExactETH(uint256,uint256,address[],address,uint256)': this.decodeSwapTokensForExactETH.bind(this),
+        'swapExactTokensForETH(uint256,uint256,address[],address,uint256)': this.decodeSwapExactTokensForETH.bind(this),
+        'swapETHForExactTokens(uint256,address[],address,uint256)': this.decodeSwapETHForExactTokens.bind(this),
+    };
 
-    constructor(name: string, selector: string) {
-        super(name);
-        this.selector = selector;
+    swapWithFeeFunctions = {
+        'swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)':
+            this.decodeSwapExactTokensForTokensSupportingFeeOnTransferTokens.bind(this),
+        'swapExactETHForTokensSupportingFeeOnTransferTokens(uint256,address[],address,uint256)':
+            this.decodeSwapExactETHForTokensSupportingFeeOnTransferTokens.bind(this),
+        'swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)':
+            this.decodeSwapExactTokensForETHSupportingFeeOnTransferTokens.bind(this),
+    };
+
+    constructor() {
+        super('uniswap-v2-router-swap');
     }
 
     decode(node: TraceEntry, state: DecodeState): UniswapV2RouterSwapResult | null {
@@ -31,7 +50,16 @@ abstract class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapRes
         if (node.type !== 'call') return null;
         if (node.status !== 1) return null;
 
-        if (!node.input.startsWith(this.selector)) return null;
+        let selector = node.input.substring(0, 10);
+        let swapDecoder = Object.entries(this.swapFunctions).find(([name, func]) => {
+            return ethers.utils.id(name).substring(0, 10) === selector;
+        });
+        let swapWithFeeDecoder = Object.entries(this.swapWithFeeFunctions).find(([name, func]) => {
+            return ethers.utils.id(name).substring(0, 10) === selector;
+        });
+        let decoder = swapDecoder || swapWithFeeDecoder;
+
+        if (!decoder) return null;
 
         state.handled[node.id] = true;
 
@@ -41,120 +69,294 @@ abstract class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapRes
             (v) => v.type === 'call' && v.variant === 'call',
         ) as TraceEntryCall[];
 
-        let result = this.decode0(node, state, inputs, outputs, subcalls);
+        let [tokenIn, tokenOut, amountIn, amountOut, recipient] = decoder[1](node, state, inputs, outputs, subcalls);
 
-        this.requestTokenMetadata(state, result.firstToken);
-        this.requestTokenMetadata(state, result.lastToken);
+        this.requestTokenMetadata(state, tokenIn);
+        this.requestTokenMetadata(state, tokenOut);
 
-        return result;
+        return {
+            type: this.name,
+            actor: node.from,
+            recipient: recipient,
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            amountIn: BigNumber.from(amountIn),
+            amountOut: BigNumber.from(amountOut),
+        };
     }
 
-    abstract decode0(
+    format(result: UniswapV2RouterSwapResult, opts: DecodeFormatOpts): JSX.Element {
+        return this.renderResult(
+            'swap',
+            '#645e9d',
+            ['tokenIn', 'tokenOut', 'recipient', 'actor'],
+            [
+                this.formatTokenAmount(opts, result.tokenIn, result.amountIn),
+                this.formatTokenAmount(opts, result.tokenOut, result.amountOut),
+                <DataRenderer
+                    chain={opts.chain}
+                    labels={opts.labels}
+                    preferredType={'address'}
+                    data={result.recipient}
+                />,
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />,
+            ],
+        );
+    }
+
+    // handles the _swap function
+    handleSwap(node: TraceEntryCall, state: DecodeState, subcalls: TraceEntryCall[]) {
+        subcalls.forEach((call) => {
+            // we don't expect any callbacks so we'll just ignore everything here
+            state.handled[call.id] = true;
+
+            call.children
+                .filter(
+                    (v): v is TraceEntryCall =>
+                        v.type === 'call' &&
+                        v.variant === 'call' &&
+                        v.input.startsWith(ethers.utils.id('transfer(address,uint256)').substring(0, 10)),
+                )
+                .forEach((v) => this.handleTransfer(state, v));
+        });
+    }
+
+    decodeSwapExactTokensForTokens(
         node: TraceEntryCall,
         state: DecodeState,
         inputs: Result,
         outputs: Result,
         subcalls: TraceEntryCall[],
-    ): UniswapV2RouterSwapResult;
+    ) {
+        // skip initial transfer from sender to first pair
+        this.handleTransferFrom(state, subcalls[0]);
 
-    format(result: UniswapV2RouterSwapResult, opts: DecodeFormatOpts): JSX.Element {
-        return (
-            <>
-                <TraceTreeNodeLabel nodeType={'swap'} nodeColor={'#645e9d'} />
-                &nbsp;recipient=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.recipient} />
-                ,&nbsp;from={this.formatTokenAmount(opts, result.firstToken, result.inputAmount)}
-                ,&nbsp;to={this.formatTokenAmount(opts, result.lastToken, result.outputAmount)}
-                ,&nbsp;actor=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />
-            </>
+        this.handleSwap(node, state, subcalls.slice(1));
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            outputs['amounts'][0],
+            outputs['amounts'][outputs['amounts'].length - 1],
+            inputs['to'],
+        ];
+    }
+
+    decodeSwapTokensForExactTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip initial transfer from sender to first pair
+        this.handleTransferFrom(state, subcalls[0]);
+
+        this.handleSwap(node, state, subcalls.slice(1));
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            outputs['amounts'][0],
+            outputs['amounts'][outputs['amounts'].length - 1],
+            inputs['to'],
+        ];
+    }
+
+    decodeSwapExactETHForTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip weth deposit
+        this.handleRecursively(state, subcalls[0]);
+
+        // skip weth transfer
+        this.handleRecursively(state, subcalls[1]);
+
+        this.handleSwap(node, state, subcalls.slice(2));
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            outputs['amounts'][0],
+            outputs['amounts'][outputs['amounts'].length - 1],
+            inputs['to'],
+        ];
+    }
+
+    decodeSwapTokensForExactETH(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip transfer
+        this.handleTransferFrom(state, subcalls[0]);
+
+        this.handleSwap(node, state, subcalls.slice(1, subcalls.length - 2));
+
+        // skip weth withdraw
+        this.handleRecursively(state, subcalls[subcalls.length - 2]);
+
+        // skip eth transfer
+        this.handleRecursively(state, subcalls[subcalls.length - 1]);
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            outputs['amounts'][0],
+            outputs['amounts'][outputs['amounts'].length - 1],
+            inputs['to'],
+        ];
+    }
+
+    decodeSwapExactTokensForETH(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip transfer
+        this.handleTransferFrom(state, subcalls[0]);
+
+        this.handleSwap(node, state, subcalls.slice(1, subcalls.length - 2));
+
+        // skip weth withdraw
+        this.handleRecursively(state, subcalls[subcalls.length - 2]);
+
+        // skip eth transfer
+        this.handleRecursively(state, subcalls[subcalls.length - 1]);
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            outputs['amounts'][0],
+            outputs['amounts'][outputs['amounts'].length - 1],
+            inputs['to'],
+        ];
+    }
+
+    decodeSwapETHForExactTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip weth deposit
+        this.handleRecursively(state, subcalls[0]);
+
+        // skip weth transfer
+        this.handleRecursively(state, subcalls[1]);
+
+        // skip potential eth refund
+        let last = subcalls.length - 1;
+        if (subcalls[last].to === node.from && !BigNumber.from(subcalls[last].value).isZero()) {
+            state.handled[subcalls[last].id] = true;
+            last--;
+        }
+
+        this.handleSwap(node, state, subcalls.slice(2, last + 1));
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            outputs['amounts'][0],
+            outputs['amounts'][outputs['amounts'].length - 1],
+            inputs['to'],
+        ];
+    }
+
+    decodeSwapExactTokensForTokensSupportingFeeOnTransferTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip transfer
+        this.handleTransferFrom(state, subcalls[0]);
+
+        // this can be the same
+        this.handleSwap(node, state, subcalls.slice(1));
+
+        let staticcalls = node.children.filter(
+            (v): v is TraceEntryCall => v.type === 'call' && v.variant === 'staticcall',
         );
-    }
-}
+        let initialBalance = BigNumber.from(staticcalls[0].output);
+        let finalBalance = BigNumber.from(staticcalls[staticcalls.length - 1].output);
 
-export class UniswapV2ExactEthForTokensDecoder extends UniswapV2RouterSwapDecoder {
-    constructor() {
-        super('uniswap_exactEthForTokens', '0x7ff36ab5');
-    }
-
-    decode0(node: TraceEntryCall, state: DecodeState, inputs: Result, outputs: Result, subcalls: TraceEntryCall[]) {
-        let pathLen = inputs[1].length;
-
-        // don't bother rendering weth deposit
-        this.handleLogs(subcalls[pathLen - 1], state);
-        // don't bother rendering weth transfer
-        this.handleLogs(subcalls[pathLen - 1 + 1], state);
-
-        this.requestTokenMetadata(state, inputs[1][0]);
-        this.requestTokenMetadata(state, inputs[1][inputs[1].length - 1]);
-
-        return {
-            type: this.name,
-            actor: node.from,
-            recipient: inputs[2].toString(),
-            firstToken: inputs[1][0],
-            lastToken: inputs[1][inputs[1].length - 1],
-            inputAmount: BigNumber.from(node.value),
-            outputAmount: BigNumber.from(outputs[0][outputs[0].length - 1]),
-        };
-    }
-}
-
-export class UniswapV2ExactTokensForEthSupportingFeeOnTransferTokens extends UniswapV2RouterSwapDecoder {
-    constructor() {
-        super('uniswap_exactEthForTokens', '0x791ac947');
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            BigNumber.from(inputs['amountIn']),
+            finalBalance.sub(initialBalance),
+            inputs['to'],
+        ];
     }
 
-    decode0(node: TraceEntryCall, state: DecodeState, inputs: Result, outputs: Result, subcalls: TraceEntryCall[]) {
-        // don't bother rendering transfer from sender to router
-        this.handleLogs(subcalls[0], state);
+    decodeSwapExactETHForTokensSupportingFeeOnTransferTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip weth deposit
+        this.handleRecursively(state, subcalls[0]);
 
-        // handle all the internal pairs
-        for (let i = 1; i < subcalls.length - 2; i++) {
-            subcalls[i].children.filter((v) => v.type === 'call').forEach((v) => this.handleLogs(v, state));
-        }
+        // skip weth transfer
+        this.handleRecursively(state, subcalls[1]);
 
-        // don't bother rendering eth transfer
-        this.handleRecursively(subcalls[subcalls.length - 1], state);
+        // this can be the same
+        this.handleSwap(node, state, subcalls.slice(1));
 
-        // don't bother rendering weth withdraw
-        this.handle(subcalls[subcalls.length - 2], state);
+        let staticcalls = node.children.filter(
+            (v): v is TraceEntryCall => v.type === 'call' && v.variant === 'staticcall',
+        );
+        let initialBalance = BigNumber.from(staticcalls[0].output);
+        let finalBalance = BigNumber.from(staticcalls[staticcalls.length - 1].output);
 
-        return {
-            type: this.name,
-            actor: node.from,
-            recipient: inputs[3].toString(),
-            firstToken: inputs[2][0],
-            lastToken: inputs[2][inputs[2].length - 1],
-            inputAmount: BigNumber.from(inputs[0]),
-            outputAmount: BigNumber.from(subcalls[subcalls.length - 1].value),
-        };
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            BigNumber.from(node.value),
+            finalBalance.sub(initialBalance),
+            inputs['to'],
+        ];
     }
-}
 
-export class UniswapV2ExactTokensForTokens extends UniswapV2RouterSwapDecoder {
-    constructor() {
-        super('uniswap_exactTokensForTokens', '0x38ed1739');
-    }
+    decodeSwapExactTokensForETHSupportingFeeOnTransferTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        // skip transfer
+        this.handleTransferFrom(state, subcalls[0]);
 
-    decode0(node: TraceEntryCall, state: DecodeState, inputs: Result, outputs: Result, subcalls: TraceEntryCall[]) {
-        // don't bother rendering transfer from sender to first pair
-        this.handleLogs(subcalls[0], state);
+        // this can be the same
+        this.handleSwap(node, state, subcalls.slice(1, subcalls.length - 2));
 
-        // handle all the internal pairs
-        for (let i = 1; i < subcalls.length; i++) {
-            subcalls[1].children.filter((v) => v.type === 'call').forEach((v) => this.handleLogs(v, state));
-        }
+        // skip weth withdraw
+        this.handleRecursively(state, subcalls[subcalls.length - 2]);
 
-        return {
-            type: this.name,
-            actor: node.from,
-            recipient: inputs[3].toString(),
-            firstToken: inputs[2][0],
-            lastToken: inputs[2][inputs[2].length - 1],
-            inputAmount: BigNumber.from(inputs[0]),
-            outputAmount: outputs[0][outputs[0].length - 1],
-        };
+        // skip eth transfer
+        this.handleRecursively(state, subcalls[subcalls.length - 1]);
+
+        return [
+            inputs['path'][0],
+            inputs['path'][inputs['path'].length - 1],
+            BigNumber.from(inputs['amountIn']),
+            BigNumber.from(subcalls[subcalls.length - 1].value),
+            inputs['to'],
+        ];
     }
 }
 
@@ -165,31 +367,20 @@ export type UniswapV2RouterAddLiquidityResult = {
     pool: string;
     tokenA: string;
     tokenB: string;
-    tokenAAmount: BigNumber;
-    tokenBAmount: BigNumber;
+    amountA: BigNumber;
+    amountB: BigNumber;
     liquidity: BigNumber;
 };
 
-abstract class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterAddLiquidityResult> {
-    format(result: UniswapV2RouterAddLiquidityResult, opts: DecodeFormatOpts): JSX.Element {
-        return (
-            <>
-                <TraceTreeNodeLabel nodeType={'add liquidity'} nodeColor={'#6c969d'} />
-                &nbsp;recipient=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.recipient} />
-                ,&nbsp;amountA={this.formatTokenAmount(opts, result.tokenA, result.tokenAAmount)}
-                ,&nbsp;amountB={this.formatTokenAmount(opts, result.tokenB, result.tokenBAmount)}
-                ,&nbsp;amountOut={this.formatTokenAmount(opts, result.pool, result.liquidity)}
-                ,&nbsp;actor=
-                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />
-            </>
-        );
-    }
-}
+export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterAddLiquidityResult> {
+    addLiquidityFunctions = {
+        'addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)':
+            this.decodeAddLiquidity.bind(this),
+        'addLiquidityETH(address,uint256,uint256,uint256,address,uint256)': this.decodeAddLiquidityETH.bind(this),
+    };
 
-export class UniswapV2AddLiquidityEth extends UniswapV2RouterAddLiquidityDecoder {
     constructor() {
-        super('uniswap_addLiquidityETH');
+        super('uniswap-v2-router-add-liquidity');
     }
 
     decode(node: TraceEntry, state: DecodeState): UniswapV2RouterAddLiquidityResult | null {
@@ -198,7 +389,12 @@ export class UniswapV2AddLiquidityEth extends UniswapV2RouterAddLiquidityDecoder
         if (node.type !== 'call') return null;
         if (node.status !== 1) return null;
 
-        if (!node.input.startsWith('0xf305d719')) return null;
+        let selector = node.input.substring(0, 10);
+        let decoder = Object.entries(this.addLiquidityFunctions).find(([name, func]) => {
+            return ethers.utils.id(name).substring(0, 10) === selector;
+        });
+
+        if (!decoder) return null;
 
         state.handled[node.id] = true;
 
@@ -208,36 +404,398 @@ export class UniswapV2AddLiquidityEth extends UniswapV2RouterAddLiquidityDecoder
             (v) => v.type === 'call' && v.variant === 'call',
         ) as TraceEntryCall[];
 
-        // ignore transfer from caller to pair
-        this.handleLogs(subcalls[0], state);
+        let [pool, tokenA, tokenB, amountA, amountB, liquidity, to] = decoder[1](
+            node,
+            state,
+            inputs,
+            outputs,
+            subcalls,
+        );
 
-        // ignore weth deposit
-        this.handle(subcalls[1], state);
-
-        // ignore weth transfer
-        this.handle(subcalls[2], state);
-
-        // ignore mint transfer
-        this.handle(subcalls[3], state);
-
-        if (subcalls.length > 4) {
-            // ignore eth refund
-            this.handle(subcalls[4], state);
-        }
-
-        this.requestTokenMetadata(state, inputs[0]);
-        this.requestTokenMetadata(state, subcalls[3].to);
+        this.requestTokenMetadata(state, tokenA);
+        this.requestTokenMetadata(state, tokenB);
 
         return {
             type: this.name,
             actor: node.from,
-            recipient: inputs[4].toString(),
-            pool: subcalls[3].to,
-            tokenA: inputs[0],
-            tokenB: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-            tokenAAmount: outputs[0],
-            tokenBAmount: outputs[1],
-            liquidity: outputs[2],
+            recipient: to,
+            pool: pool,
+            tokenA: tokenA,
+            tokenB: tokenB,
+            amountA: amountA,
+            amountB: amountB,
+            liquidity: liquidity,
         };
+    }
+
+    format(result: UniswapV2RouterAddLiquidityResult, opts: DecodeFormatOpts): JSX.Element {
+        return this.renderResult(
+            'add liquidity',
+            '#6c969d',
+            ['tokenA', 'tokenB', 'liquidity', 'recipient', 'actor'],
+            [
+                this.formatTokenAmount(opts, result.tokenA, result.amountA),
+                this.formatTokenAmount(opts, result.tokenB, result.amountB),
+                this.formatTokenAmount(opts, result.pool, result.liquidity),
+                <DataRenderer
+                    chain={opts.chain}
+                    labels={opts.labels}
+                    preferredType={'address'}
+                    data={result.recipient}
+                />,
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />,
+            ],
+        );
+    }
+
+    // handles the _addLiquidity function
+    handleAddLiquidity(node: TraceEntryCall, subcalls: TraceEntryCall[], state: DecodeState): boolean {
+        return subcalls[0].input.substring(0, 10) === ethers.utils.id('createPair(address,address)').substring(0, 10);
+    }
+
+    decodeAddLiquidity(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        let idx = this.handleAddLiquidity(node, subcalls, state) ? 1 : 0;
+
+        // handle the transfer from tokenA -> pair
+        this.handleTransferFrom(state, subcalls[idx]);
+
+        // handle the transfer from tokenB -> pair
+        this.handleTransfer(state, subcalls[idx + 1]);
+
+        // handle the mint call
+        this.handleRecursively(state, subcalls[idx + 2]);
+
+        return [
+            subcalls[idx + 2].to,
+            inputs['tokenA'],
+            inputs['tokenB'],
+            outputs['amountA'],
+            outputs['amountB'],
+            outputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+
+    decodeAddLiquidityETH(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        let idx = this.handleAddLiquidity(node, subcalls, state) ? 1 : 0;
+
+        // handle the transfer from tokenA -> pair
+        this.handleTransferFrom(state, subcalls[idx]);
+
+        // handle the weth deposit
+        this.handleRecursively(state, subcalls[idx + 1]);
+
+        // handle the weth transfer
+        this.handleRecursively(state, subcalls[idx + 2]);
+
+        // handle the mint call
+        this.handleRecursively(state, subcalls[idx + 3]);
+
+        // handle the optional eth refund
+        if (idx + 4 < subcalls.length) {
+            this.handleRecursively(state, subcalls[idx + 4]);
+        }
+
+        return [
+            subcalls[idx + 3].to,
+            inputs['token'],
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            outputs['amountToken'],
+            outputs['amountETH'],
+            outputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+}
+
+export type UniswapV2RouterRemoveLiquidityResult = {
+    type: string;
+    actor: string;
+    recipient: string;
+    pool: string;
+    tokenA: string;
+    tokenB: string;
+    amountA: BigNumber;
+    amountB: BigNumber;
+    liquidity: BigNumber;
+};
+
+export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2RouterRemoveLiquidityResult> {
+    addLiquidityFunctions = {
+        'removeLiquidity(address,address,uint256,uint256,uint256,address,uint256)':
+            this.decodeRemoveLiquidity.bind(this),
+        'removeLiquidityETH(address,uint256,uint256,uint256,address,uint256)': this.decodeRemoveLiquidityETH.bind(this),
+        'removeLiquidityWithPermit(address,address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)':
+            this.decodeRemoveLiquidityWithPermit.bind(this),
+        'removeLiquidityETHWithPermit(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)':
+            this.decodeRemoveLiquidityETHWithPermit.bind(this),
+        'removeLiquidityETHSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256)':
+            this.decodeRemoveLiquidityETHSupportingFeeOnTransferTokens.bind(this),
+        'removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)':
+            this.decodeRemoveLiquidityETHWithPermitSupportingFeeOnTransferTokens.bind(this),
+    };
+
+    constructor() {
+        super('uniswap-v2-router-remove-liquidity');
+    }
+
+    decode(node: TraceEntry, state: DecodeState): UniswapV2RouterRemoveLiquidityResult | null {
+        if (state.handled[node.id]) return null;
+
+        if (node.type !== 'call') return null;
+        if (node.status !== 1) return null;
+
+        let selector = node.input.substring(0, 10);
+        let decoder = Object.entries(this.addLiquidityFunctions).find(([name, func]) => {
+            return ethers.utils.id(name).substring(0, 10) === selector;
+        });
+
+        if (!decoder) return null;
+
+        state.handled[node.id] = true;
+
+        let [inputs, outputs] = this.decodeFunction(node, state);
+
+        let subcalls: TraceEntryCall[] = node.children.filter(
+            (v) => v.type === 'call' && v.variant === 'call',
+        ) as TraceEntryCall[];
+
+        let [pool, tokenA, tokenB, amountA, amountB, liquidity, to] = decoder[1](
+            node,
+            state,
+            inputs,
+            outputs,
+            subcalls,
+        );
+
+        this.requestTokenMetadata(state, tokenA);
+        this.requestTokenMetadata(state, tokenB);
+        this.requestTokenMetadata(state, pool);
+
+        return {
+            type: this.name,
+            actor: node.from,
+            recipient: to,
+            pool: pool,
+            tokenA: tokenA,
+            tokenB: tokenB,
+            amountA: amountA,
+            amountB: amountB,
+            liquidity: liquidity,
+        };
+    }
+
+    format(result: UniswapV2RouterRemoveLiquidityResult, opts: DecodeFormatOpts): JSX.Element {
+        return this.renderResult(
+            'remove liquidity',
+            '#392b58',
+            ['tokenA', 'tokenB', 'liquidity', 'recipient', 'actor'],
+            [
+                this.formatTokenAmount(opts, result.tokenA, result.amountA),
+                this.formatTokenAmount(opts, result.tokenB, result.amountB),
+                this.formatTokenAmount(opts, result.pool, result.liquidity),
+                <DataRenderer
+                    chain={opts.chain}
+                    labels={opts.labels}
+                    preferredType={'address'}
+                    data={result.recipient}
+                />,
+                <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />,
+            ],
+        );
+    }
+
+    // handles the removeLiquidity function
+    handleRemoveLiquidity(
+        node: TraceEntryCall,
+        subcalls: TraceEntryCall[],
+        state: DecodeState,
+        offset: number,
+    ): number {
+        // handle the transfer from tokenA -> pair
+        this.handleTransferFrom(state, subcalls[offset]);
+
+        // handle the burn call
+        this.handleRecursively(state, subcalls[offset + 1]);
+
+        return offset + 2;
+    }
+
+    decodeRemoveLiquidity(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        this.handleRemoveLiquidity(node, subcalls, state, 0);
+
+        return [
+            subcalls[0].to,
+            inputs['tokenA'],
+            inputs['tokenB'],
+            outputs['amountA'],
+            outputs['amountB'],
+            inputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+
+    decodeRemoveLiquidityETH(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        this.handleRemoveLiquidity(node, subcalls, state, 0);
+
+        // handle the transfer
+        this.handleTransfer(state, subcalls[2]);
+
+        // handle the weth withdraw
+        this.handleRecursively(state, subcalls[3]);
+
+        // handle the eth return
+        state.handled[subcalls[4].id] = true;
+
+        return [
+            subcalls[0].to,
+            inputs['token'],
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            outputs['amountToken'],
+            outputs['amountETH'],
+            inputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+
+    decodeRemoveLiquidityWithPermit(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        this.handleRemoveLiquidity(node, subcalls, state, 1);
+
+        return [
+            subcalls[0].to,
+            inputs['tokenA'],
+            inputs['tokenB'],
+            outputs['amountA'],
+            outputs['amountB'],
+            inputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+
+    decodeRemoveLiquidityETHWithPermit(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        let offset = this.handleRemoveLiquidity(node, subcalls, state, 1);
+
+        // handle the transfer
+        this.handleTransfer(state, subcalls[offset]);
+
+        // handle the weth withdraw
+        this.handleRecursively(state, subcalls[offset + 1]);
+
+        // handle the eth return
+        state.handled[subcalls[offset + 2].id] = true;
+
+        return [
+            subcalls[0].to,
+            inputs['token'],
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            outputs['amountToken'],
+            outputs['amountETH'],
+            inputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+
+    decodeRemoveLiquidityETHSupportingFeeOnTransferTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        let offset = this.handleRemoveLiquidity(node, subcalls, state, 0);
+
+        // handle the transfer
+        this.handleTransfer(state, subcalls[offset]);
+
+        // handle the weth withdraw
+        this.handleRecursively(state, subcalls[offset + 1]);
+
+        // handle the eth return
+        state.handled[subcalls[offset + 2].id] = true;
+
+        let staticcalls = node.children.filter(
+            (v): v is TraceEntryCall => v.type === 'call' && v.variant === 'staticcall',
+        );
+        let output = BigNumber.from(staticcalls[staticcalls.length - 1].output);
+
+        return [
+            subcalls[0].to,
+            inputs['token'],
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            output,
+            outputs['amountETH'],
+            inputs['liquidity'],
+            inputs['to'],
+        ];
+    }
+
+    decodeRemoveLiquidityETHWithPermitSupportingFeeOnTransferTokens(
+        node: TraceEntryCall,
+        state: DecodeState,
+        inputs: Result,
+        outputs: Result,
+        subcalls: TraceEntryCall[],
+    ) {
+        let offset = this.handleRemoveLiquidity(node, subcalls, state, 1);
+
+        // handle the transfer
+        this.handleTransfer(state, subcalls[offset]);
+
+        // handle the weth withdraw
+        this.handleRecursively(state, subcalls[offset + 1]);
+
+        // handle the eth return
+        state.handled[subcalls[offset + 2].id] = true;
+
+        let staticcalls = node.children.filter(
+            (v): v is TraceEntryCall => v.type === 'call' && v.variant === 'staticcall',
+        );
+        let output = BigNumber.from(staticcalls[staticcalls.length - 1].output);
+
+        return [
+            subcalls[0].to,
+            inputs['token'],
+            '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            output,
+            outputs['amountETH'],
+            inputs['liquidity'],
+            inputs['to'],
+        ];
     }
 }

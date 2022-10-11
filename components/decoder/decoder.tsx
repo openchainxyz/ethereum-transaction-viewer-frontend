@@ -5,6 +5,9 @@ import {
     UniswapV2ExactEthForTokensDecoder,
     UniswapV2ExactTokensForEthSupportingFeeOnTransferTokens,
     UniswapV2ExactTokensForTokens,
+    UniswapV2RouterAddLiquidityDecoder,
+    UniswapV2RouterRemoveLiquidityDecoder,
+    UniswapV2RouterSwapDecoder,
 } from './uniswap';
 import { ERC20Decoder, ValueTransferDecoder } from './fallback';
 
@@ -16,10 +19,9 @@ export const registerDecoder = (decoder: Decoder<any>) => {
     allDecoders[decoder.name] = decoder;
 };
 
-registerDecoder(new UniswapV2ExactEthForTokensDecoder());
-registerDecoder(new UniswapV2ExactTokensForEthSupportingFeeOnTransferTokens());
-registerDecoder(new UniswapV2ExactTokensForTokens());
-registerDecoder(new UniswapV2AddLiquidityEth());
+registerDecoder(new UniswapV2RouterSwapDecoder());
+registerDecoder(new UniswapV2RouterAddLiquidityDecoder());
+registerDecoder(new UniswapV2RouterRemoveLiquidityDecoder());
 
 // must come last!
 registerDecoder(new ValueTransferDecoder());

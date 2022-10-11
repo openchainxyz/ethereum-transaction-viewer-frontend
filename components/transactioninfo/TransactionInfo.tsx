@@ -7,7 +7,7 @@ import { BigNumber } from 'ethers';
 import { formatUnitsSmartly, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { PriceMetadata, TransactionInfoResponse } from '../types';
-import {getChain} from "../Chains";
+import { getChain } from '../Chains';
 
 type TransactionAttributeGridProps = {
     children?: JSX.Element[];
@@ -57,7 +57,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
     const { transactionResponse, priceMetadata, chain } = props;
 
     const chainInfo = getChain(chain);
-    if (!chainInfo) throw new Error("weird");
+    if (!chainInfo) throw new Error('weird');
 
     let blockTimestamp = DateTime.fromSeconds(transactionResponse.metadata.timestamp);
 
@@ -106,7 +106,9 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
     let currentEthPrice = priceMetadata.currentPrices[chainInfo.nativeTokenAddress];
 
     let transactionValue = transactionResponse.transaction.value;
-    let transactionFee = transactionResponse.receipt.gasUsed.mul(transactionResponse.receipt.effectiveGasPrice || transactionResponse.transaction.gasPrice);
+    let transactionFee = transactionResponse.receipt.gasUsed.mul(
+        transactionResponse.receipt.effectiveGasPrice || transactionResponse.transaction.gasPrice,
+    );
 
     let transactionValueStr = formatUnitsSmartly(transactionValue, chainInfo.nativeSymbol);
     let transactionFeeStr = formatUnitsSmartly(transactionFee, chainInfo.nativeSymbol);

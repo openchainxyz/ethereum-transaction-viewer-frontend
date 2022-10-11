@@ -8,11 +8,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { theme } from '../components/helpers';
-import {SupportedChains} from "../components/Chains";
+import { SupportedChains } from '../components/Chains';
 
 export default function Home() {
     const router = useRouter();
-    const [chain, setChain] = React.useState('');
+    const [chain, setChain] = React.useState('ethereum');
     const [txhash, setTxhash] = React.useState('');
 
     return (
@@ -71,10 +71,15 @@ export default function Home() {
                         >
                             <select
                                 className="outline-1 outline outline-[#0000002d] py-2 px-3"
+                                value={chain}
                                 onChange={(event) => setChain(event.target.value)}
                             >
-                                {SupportedChains.map(v => {
-                                    return <option key={v.id} value={v.id}>{v.displayName}</option>;
+                                {SupportedChains.map((v) => {
+                                    return (
+                                        <option key={v.id} value={v.id}>
+                                            {v.displayName}
+                                        </option>
+                                    );
                                 })}
                             </select>
                             <input

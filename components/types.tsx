@@ -1,6 +1,6 @@
-import {EventFragment, FunctionFragment, JsonFragment} from '@ethersproject/abi';
-import {BigNumber, ethers, Transaction} from 'ethers';
-import {TransactionReceipt} from '@ethersproject/abstract-provider';
+import { EventFragment, FunctionFragment, JsonFragment } from '@ethersproject/abi';
+import { BigNumber, ethers, Transaction } from 'ethers';
+import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 export type AddressInfo = {
     label: string;
@@ -79,7 +79,7 @@ export type TraceEntry =
     | TraceEntrySstore;
 
 export type TraceResult = {
-    chain: string,
+    chain: string;
     txhash: string;
     preimages: Record<string, string>;
     addresses: Record<string, Record<string, AddressInfo>>;
@@ -143,7 +143,7 @@ export type StructSlotInfo = BaseSlotInfo & {
 export type SlotInfo = RawSlotInfo | MappingSlotInfo | ArraySlotInfo | StructSlotInfo;
 
 export type TraceMetadata = {
-    chain: string,
+    chain: string;
 
     // map of address => label (we cant label by codehash)
     labels: Record<string, string>;
@@ -175,7 +175,7 @@ export type TokenMetadata = {
 };
 
 export type TransactionMetadata = {
-    chain: string,
+    chain: string;
     rawTransaction: string;
     from: string;
     labels: Record<string, string>;

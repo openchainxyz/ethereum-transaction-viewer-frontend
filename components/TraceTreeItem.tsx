@@ -25,7 +25,7 @@ export const TraceTreeNodeLabel = (props: TraceTreeNodeLabelProps) => {
         <span
             onClick={onNodeClick}
             style={{
-                cursor: 'pointer',
+                cursor: onNodeClick ? 'pointer' : 'inherit',
                 color: nodeColor,
             }}
         >

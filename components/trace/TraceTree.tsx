@@ -313,6 +313,9 @@ export const TraceTree = (props: TraceTreeProps) => {
                 aria-label="rich object"
                 defaultCollapseIcon={<ExpandMoreIcon />}
                 defaultExpandIcon={<ChevronRightIcon />}
+                sx={{
+                    paddingBottom: '30vh',
+                }}
                 expanded={expanded}
                 onNodeToggle={(event: React.SyntheticEvent, nodeIds: string[]) => {
                     if (event.type === 'click') {

@@ -4,7 +4,7 @@ import { TraceMetadata } from './types';
 import * as React from 'react';
 import { SpanIconButton } from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import {getChain} from "./Chains";
+import { getChain } from './Chains';
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
     if (paramType.indexed && value.hash) {
@@ -35,7 +35,11 @@ let formatValueWithParamType = (
 
         if (makeLink) {
             return (
-                <a href={`${getChain(chain)?.blockexplorerUrl}/address/${address}`} target={'_blank'} rel={'noopener noreferrer'}>
+                <a
+                    href={`${getChain(chain)?.blockexplorerUrl}/address/${address}`}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                >
                     {label}
                 </a>
             );
@@ -128,7 +132,14 @@ export const DataRenderer = (props: DataRendererProps) => {
             );
         }
 
-        let rendered = formatValueWithParamType(paramType, chain, stringified, truncate || false, makeLink, props.labels);
+        let rendered = formatValueWithParamType(
+            paramType,
+            chain,
+            stringified,
+            truncate || false,
+            makeLink,
+            props.labels,
+        );
         return (
             <>
                 {copyButton}

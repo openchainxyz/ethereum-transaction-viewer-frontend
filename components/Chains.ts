@@ -1,12 +1,12 @@
 export type ChainConfig = {
-    id: string,
-    displayName: string,
-    nativeTokenAddress: string,
-    nativeSymbol: string,
-    coingeckoId: string,
-    defillamaPrefix: string,
-    rpcUrl: string,
-    blockexplorerUrl: string,
+    id: string;
+    displayName: string;
+    nativeTokenAddress: string;
+    nativeSymbol: string;
+    coingeckoId: string;
+    defillamaPrefix: string;
+    rpcUrl: string;
+    blockexplorerUrl: string;
 };
 
 export const SupportedChains = [
@@ -83,5 +83,5 @@ export const SupportedChains = [
 ];
 
 export const getChain = (id: string): ChainConfig | undefined => {
-    return SupportedChains.find(chain => chain.id === id);
-}
+    return SupportedChains.find((chain) => chain.id === id);
+};

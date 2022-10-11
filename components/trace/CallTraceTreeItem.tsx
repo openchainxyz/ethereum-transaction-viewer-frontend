@@ -27,7 +27,7 @@ import { SpanIconButton } from '../SpanIconButton';
 import { useErrorFragment, useFunctionFragment } from '../hooks/useFragment';
 import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
-import {getChain} from "../Chains";
+import { getChain } from '../Chains';
 
 const callColor = {
     call: '#2c2421',
@@ -336,7 +336,11 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
 
     let value = BigNumber.from(node.value);
     if (value.gt(0)) {
-        valueNode = <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${getChain(traceResult.chain)?.nativeSymbol}]`}</span>;
+        valueNode = (
+            <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${
+                getChain(traceResult.chain)?.nativeSymbol
+            }]`}</span>
+        );
     }
 
     let treeContent = (
