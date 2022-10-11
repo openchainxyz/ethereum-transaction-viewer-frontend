@@ -47,7 +47,7 @@ function Navbar() {
                 <meta property="twitter:site" content="@samczsun" />
                 <link rel="icon" href="/favicon.png" />
             </Head>
-            <div className="max-w-[900px] mx-auto text-[#19232D] dark:text-white relative">
+            <div className="max-w-[900px] mx-auto text-[#19232D] dark:text-white relative px-5">
                 <Box className="flex flex-col" justifyContent="left">
                     <div className="flex my-5">
                         <div className="md:w-5 w-4 my-auto mr-3 flex hover:opacity-60 cursor-pointer dark:invert">
