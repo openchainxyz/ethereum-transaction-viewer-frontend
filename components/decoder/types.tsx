@@ -17,7 +17,7 @@ import { getChain } from '../Chains';
 import { ParamType } from 'ethers/lib/utils';
 import WithSeparator from 'react-with-separator';
 import { TraceTreeNodeLabel } from '../TraceTreeItem';
-import { Result, defaultAbiCoder } from '@ethersproject/abi/lib.esm';
+import { Result, defaultAbiCoder } from '@ethersproject/abi/lib';
 
 export type DecodeResultCommon = {
     type: string;

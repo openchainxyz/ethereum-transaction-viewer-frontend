@@ -1,5 +1,5 @@
 import { TraceMetadata } from './types';
-import { ParamType, Result } from '@ethersproject/abi/lib.esm';
+import { ParamType, Result } from '@ethersproject/abi/lib';
 import { TreeItemContentSpan } from './helpers';
 import { DataRenderer } from './DataRenderer';
 import TreeItem from '@mui/lab/TreeItem';

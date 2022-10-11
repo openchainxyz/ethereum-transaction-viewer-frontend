@@ -1,4 +1,4 @@
-import { EventFragment, FunctionFragment, JsonFragment } from '@ethersproject/abi/lib.esm';
+import { EventFragment, FunctionFragment, JsonFragment } from '@ethersproject/abi/lib';
 import { BigNumber, ethers, Transaction } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 

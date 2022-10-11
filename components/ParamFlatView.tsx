@@ -1,5 +1,5 @@
 import { TraceMetadata } from './types';
-import { ParamType, Result } from '@ethersproject/abi/lib.esm';
+import { ParamType, Result } from '@ethersproject/abi/lib';
 import WithSeparator from 'react-with-separator';
 import { DataRenderer } from './DataRenderer';
 import * as React from 'react';

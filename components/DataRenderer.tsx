@@ -1,4 +1,4 @@
-import { ParamType } from '@ethersproject/abi/lib.esm';
+import { ParamType } from '@ethersproject/abi/lib';
 import { BigNumber, ethers } from 'ethers';
 import * as React from 'react';
 import { SpanIconButton } from './SpanIconButton';

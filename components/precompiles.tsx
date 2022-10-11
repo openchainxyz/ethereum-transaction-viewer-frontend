@@ -1,4 +1,4 @@
-import { FunctionFragment } from '@ethersproject/abi/lib.esm';
+import { FunctionFragment } from '@ethersproject/abi/lib';
 import { BigNumber, ethers } from 'ethers';
 
 type Precompile = {
