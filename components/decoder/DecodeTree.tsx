@@ -1,11 +1,10 @@
-import { DecodeNode, format } from './decoder';
+import { format } from './decoder';
 import TreeView from '@mui/lab/TreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import * as React from 'react';
-import { Typography } from '@mui/material';
 import { TraceTreeItem } from '../TraceTreeItem';
-import { DecodeResult } from './types';
+import { DecodeResult, DecodeNode } from './types';
 import { PriceMetadata, TokenMetadata } from '../types';
 
 export type DecodeTreeProps = {

@@ -1,4 +1,4 @@
-import { EventFragment, FunctionFragment, JsonFragment } from '@ethersproject/abi';
+import { EventFragment, FunctionFragment, JsonFragment } from '@ethersproject/abi/lib.esm';
 import { BigNumber, ethers, Transaction } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
@@ -13,6 +13,7 @@ export type AddressInfo = {
 };
 
 export type TraceEntryCallable = {
+    id: string;
     from: string;
     to: string;
     input: string;

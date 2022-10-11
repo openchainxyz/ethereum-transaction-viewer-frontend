@@ -20,7 +20,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { formatEther } from 'ethers/lib/utils';
 import { TraceTreeItem, TraceTreeNodeLabel } from '../TraceTreeItem';
 import { TraceTreeDialog } from '../TraceTreeDialog';
-import { chunkString, findAffectedContract } from '../helpers';
+import { chunkString } from '../helpers';
 import { LogTraceTreeItem } from './LogTraceTreeItem';
 import { SpanIconButton } from '../SpanIconButton';
 import { getChain } from '../Chains';

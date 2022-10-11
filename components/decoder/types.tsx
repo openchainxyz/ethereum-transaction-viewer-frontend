@@ -9,7 +9,6 @@ import {
     TraceMetadata,
     TraceResult,
 } from '../types';
-import { defaultAbiCoder, Result } from '@ethersproject/abi';
 import { DataRenderer } from '../DataRenderer';
 import * as React from 'react';
 import { Tooltip } from '@mui/material';
@@ -18,6 +17,7 @@ import { getChain } from '../Chains';
 import { ParamType } from 'ethers/lib/utils';
 import WithSeparator from 'react-with-separator';
 import { TraceTreeNodeLabel } from '../TraceTreeItem';
+import { Result, defaultAbiCoder } from '@ethersproject/abi/lib.esm';
 
 export type DecodeResultCommon = {
     type: string;
@@ -76,7 +76,7 @@ export abstract class Decoder<T extends DecodeResultCommon> {
                 node.children.forEach(visit);
             }
         };
-        visit(node);
+        visit(node as any);
     }
 
     handle(state: DecodeState, node: TraceEntryCallable) {
@@ -170,7 +170,7 @@ export abstract class Decoder<T extends DecodeResultCommon> {
 
         return [
             defaultAbiCoder.decode(functionFragment.inputs, ethers.utils.arrayify(node.input).slice(4)),
-            defaultAbiCoder.decode(functionFragment.outputs, ethers.utils.arrayify(node.output)),
+            defaultAbiCoder.decode(functionFragment.outputs!, ethers.utils.arrayify(node.output)),
         ];
     }
 
