@@ -49,6 +49,7 @@ import { ParamType } from 'ethers/lib/utils';
 import { getChain, SupportedChains } from '../../components/Chains';
 import { LoadingButton } from '@mui/lab';
 import SearchIcon from '@mui/icons-material/Search';
+import Home from '../index';
 
 type APIResponseError = {
     ok: false;
@@ -547,129 +548,40 @@ export default function TransactionViewer() {
     return (
         <ThemeProvider theme={theme}>
             <div className={styles.container}>
-                <Head>
-                    <title>Ethereum Transaction Viewer</title>
-                    <meta name="description" content="View and trace Ethereum transactions" />
-                    <meta property="og:type" content="website" />
-                    <meta property="og:title" content="Ethereum Transaction Viewer" />
-                    <meta property="og:description" content="View and trace Ethereum transactions" />
-                    <meta property="og:image" content="https://tx.eth.samczsun.com/favicon.png" />
-                    <meta property="twitter:card" content="summary" />
-                    <meta property="twitter:title" content="Ethereum Transaction Viewer" />
-                    <meta property="twitter:description" content="View and trace Ethereum transactions" />
-                    <meta property="twitter:url" content="https://tx.eth.samczsun.com" />
-                    <meta property="twitter:image" content="https://tx.eth.samczsun.com/favicon.png" />
-                    <meta property="twitter:site" content="@samczsun" />
-                    <link rel="icon" href="/favicon.png" />
-                </Head>
-                <div className="max-w-[900px] mx-auto text-[#19232D] relative">
-                    <Box className="flex flex-col" justifyContent="left">
-                        <div className="flex my-5">
-                            <div className={'md:w-5 w-4 my-auto mr-3 flex hover:opacity-60'}>
-                                <Link href={'/'}>
-                                    <Image src="/favicon.png" width={'512'} height={'512'} layout="intrinsic" />
-                                </Link>
-                            </div>
-                            <h1 className="md:text-xl text-sm -tracking-wider font-inter">
-                                Ethereum Transaction Viewer
-                            </h1>
-                            <a
-                                className="md:w-5 w-4 my-auto mr-4 flex ml-auto hover:opacity-60"
-                                href="https://github.com/samczsun/ethereum-transaction-viewer-frontend"
-                                target={'_blank'}
-                                rel={'noreferrer noopener'}
-                            >
-                                <Image src="/images/github.png" width={'512'} height={'512'} layout="intrinsic" />
-                            </a>
-                            <a
-                                className="md:w-5 w-4 my-auto mr-4 flex hover:opacity-60"
-                                href="https://twitter.com/samczsun"
-                                target={'_blank'}
-                                rel={'noreferrer noopener'}
-                            >
-                                <Image src="/images/twitter.png" width={'512'} height={'512'} layout="intrinsic" />
-                            </a>
-                        </div>
+                <Home />
 
-                        <div className="h-[1px] w-full bg-[#0000002d]"></div>
-                    </Box>
-                    <div className="flex flex-row w-full place-content-center">
-                        <div
-                            className="flex-row flex place-content-center relative w-full my-5 text-[#606161]"
-                            style={{ fontFamily: 'RiformaLL' }}
-                        >
-                            <select
-                                className="outline-1 outline outline-[#0000002d] py-2 px-3"
-                                value={chain}
-                                onChange={(event) => setChain(event.target.value)}
-                            >
-                                {SupportedChains.map((v) => {
-                                    return (
-                                        <option key={v.id} value={v.id}>
-                                            {v.displayName}
-                                        </option>
-                                    );
-                                })}
-                            </select>
-                            <input
-                                id="search"
-                                type="text"
-                                placeholder="Enter txhash..."
-                                value={txhash}
-                                onChange={(event) => setTxhash(event.target.value)}
-                                onKeyUp={(event) => {
-                                    if (event.key === 'Enter') {
-                                        router.push(`/${chain}/${txhash}`);
-                                    }
-                                }}
-                                className="w-full outline-1 outline outline-[#0000002d] py-2 px-3"
-                            />
-                            <button
-                                className="my-auto flex  hover:bg-[#00e1003a] h-full outline-1 outline outline-[#0000002d] rounded-none text-lg py-2 px-3 z-10 ml-[1px] hover:text-black"
-                                onClick={() => {
-                                    router.push(`/${chain}/${txhash}`);
-                                }}
-                                disabled={isSearching}
-                            >
-                                <h1 className="my-auto">View</h1>
-                            </button>
-                        </div>
-                    </div>
-                    <Collapse in={!alertData.dismissed}>
-                        <div className="mx-auto flex place-content-center">
-                            <Alert
-                                severity={alertData.severity}
-                                action={
-                                    <IconButton
-                                        aria-label="close"
-                                        color="inherit"
-                                        size="small"
-                                        onClick={() => {
-                                            setAlertData((prevState) => ({
-                                                ...prevState,
-                                                dismissed: true,
-                                            }));
-                                        }}
-                                    >
-                                        <CloseIcon fontSize="inherit" />
-                                    </IconButton>
-                                }
-                                sx={{ mb: 2 }}
-                            >
-                                {alertData.message}
-                            </Alert>
-                        </div>
-                    </Collapse>
-                </div>
+                <Typography variant={'h6'} className="dark:invert">
+                    Transaction Info
+                </Typography>
+                {transactionInfoGrid ? (
+                    <span className="dark:invert">{transactionInfoGrid}</span>
+                ) : (
+                    <Typography variant={'body1'} className="dark:invert">
+                        Loading...
+                    </Typography>
+                )}
 
-                <Typography variant={'h6'}>Transaction Info</Typography>
-                {transactionInfoGrid || <Typography variant={'body1'}>Loading...</Typography>}
+                <Typography variant={'h6'} className="dark:invert">
+                    Decoded Actions
+                </Typography>
+                {transactionActions ? (
+                    <span className="dark:invert">{transactionActions}</span>
+                ) : (
+                    <Typography variant={'body1'} className="dark:invert">
+                        Loading...
+                    </Typography>
+                )}
 
-                <Typography variant={'h6'}>Decoded Actions</Typography>
-                {transactionActions || <Typography variant={'body1'}>Loading...</Typography>}
-
-                <Typography variant={'h6'}>Call Trace</Typography>
-                {traceTree || <Typography variant={'body1'}>Loading...</Typography>}
+                <Typography variant={'h6'} className="dark:invert">
+                    Call Trace
+                </Typography>
+                {traceTree ? (
+                    <span className="dark:invert">{traceTree}</span>
+                ) : (
+                    <Typography variant={'body1'} className="dark:invert">
+                        Loading...
+                    </Typography>
+                )}
             </div>
         </ThemeProvider>
     );
