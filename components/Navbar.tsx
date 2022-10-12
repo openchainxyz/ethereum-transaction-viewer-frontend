@@ -21,6 +21,14 @@ function Navbar() {
     const [darkMode, setDarkMode] = React.useState(false);
 
     React.useEffect(() => {
+        setDarkMode(JSON.parse(window.localStorage.getItem('pref:dark')));
+    }, []);
+
+    React.useEffect(() => {
+        window.localStorage.setItem('dark', darkMode);
+    }, [darkMode]);
+
+    React.useEffect(() => {
         var _element = document.documentElement;
         if (darkMode) {
             _element.classList.add('dark');
@@ -30,6 +38,7 @@ function Navbar() {
             _element.style.background = '#FFFFFF';
         }
     }, [darkMode]);
+
     return (
         <div>
             <Head>
