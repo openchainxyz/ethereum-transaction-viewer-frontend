@@ -238,7 +238,7 @@ export const CreateTraceTreeItem = (props: CreateTraceTreeItemProps) => {
                     ) : null}
                 </Grid>
                 <Grid item>Subcall Logs:</Grid>
-                <Grid item>
+                <Grid item width={'100%'} overflow={'auto'} paddingBottom={'20px'}>
                     {Object.values(traceMetadata.nodesById)
                         .filter((v): v is TraceEntryLog => v.type === 'log')
                         .filter((v) => v.id.startsWith(node.id + '.'))

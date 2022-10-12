@@ -66,6 +66,9 @@ export const ParamTreeView = (props: ParamTreeViewProps) => {
             defaultCollapseIcon={<ExpandMoreIcon />}
             defaultExpanded={['root']}
             defaultExpandIcon={<ChevronRightIcon />}
+            sx={{
+                paddingBottom: '20px',
+            }}
         >
             {recursivelyRenderParams(props.path + '.root', props.params, props.values)}
         </TreeView>

@@ -17,7 +17,7 @@ import { getChain } from '../Chains';
 import { ParamType } from 'ethers/lib/utils';
 import WithSeparator from 'react-with-separator';
 import { TraceTreeNodeLabel } from '../TraceTreeItem';
-import { Result, defaultAbiCoder } from '@ethersproject/abi/lib';
+import {Result, defaultAbiCoder, FunctionFragment} from '@ethersproject/abi/lib';
 
 export type DecodeResultCommon = {
     type: string;
@@ -168,6 +168,13 @@ export abstract class Decoder<T extends DecodeResultCommon> {
     decodeFunction(node: TraceEntryCall, state: DecodeState): [Result, Result] {
         let functionFragment = state.metadata.abis[node.to][node.codehash].getFunction(node.input.substring(0, 10));
 
+        return [
+            defaultAbiCoder.decode(functionFragment.inputs, ethers.utils.arrayify(node.input).slice(4)),
+            defaultAbiCoder.decode(functionFragment.outputs!, ethers.utils.arrayify(node.output)),
+        ];
+    }
+
+    decodeFunctionWithFragment(node: TraceEntryCall, functionFragment: FunctionFragment): [Result, Result] {
         return [
             defaultAbiCoder.decode(functionFragment.inputs, ethers.utils.arrayify(node.input).slice(4)),
             defaultAbiCoder.decode(functionFragment.outputs!, ethers.utils.arrayify(node.output)),

@@ -4,7 +4,8 @@ import { TraceTreeNodeLabel } from '../TraceTreeItem';
 import { DataRenderer } from '../DataRenderer';
 import { BigNumber, ethers } from 'ethers';
 import * as React from 'react';
-import { Result } from '@ethersproject/abi';
+import {Fragment, Result} from '@ethersproject/abi';
+import {FunctionFragment} from "@ethersproject/abi/lib";
 
 export type UniswapV2RouterSwapResult = {
     type: string;
@@ -21,22 +22,22 @@ export type UniswapV2RouterSwapResult = {
 
 export class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResult> {
     swapFunctions = {
-        'swapExactTokensForTokens(uint256,uint256,address[],address,uint256)':
+        'swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
             this.decodeSwapExactTokensForTokens.bind(this),
-        'swapTokensForExactTokens(uint256,uint256,address[],address,uint256)':
+        'swapTokensForExactTokens(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
             this.decodeSwapTokensForExactTokens.bind(this),
-        'swapExactETHForTokens(uint256,address[],address,uint256)': this.decodeSwapExactETHForTokens.bind(this),
-        'swapTokensForExactETH(uint256,uint256,address[],address,uint256)': this.decodeSwapTokensForExactETH.bind(this),
-        'swapExactTokensForETH(uint256,uint256,address[],address,uint256)': this.decodeSwapExactTokensForETH.bind(this),
-        'swapETHForExactTokens(uint256,address[],address,uint256)': this.decodeSwapETHForExactTokens.bind(this),
+        'swapExactETHForTokens(uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapExactETHForTokens.bind(this),
+        'swapTokensForExactETH(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapTokensForExactETH.bind(this),
+        'swapExactTokensForETH(uint256 amonutIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapExactTokensForETH.bind(this),
+        'swapETHForExactTokens(uint256 amountOut,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapETHForExactTokens.bind(this),
     };
 
     swapWithFeeFunctions = {
-        'swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)':
+        'swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline)':
             this.decodeSwapExactTokensForTokensSupportingFeeOnTransferTokens.bind(this),
-        'swapExactETHForTokensSupportingFeeOnTransferTokens(uint256,address[],address,uint256)':
+        'swapExactETHForTokensSupportingFeeOnTransferTokens(uint256 amountOutMin,address[] memory path,address to,uint256 deadline)':
             this.decodeSwapExactETHForTokensSupportingFeeOnTransferTokens.bind(this),
-        'swapExactTokensForETHSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)':
+        'swapExactTokensForETHSupportingFeeOnTransferTokens(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline)':
             this.decodeSwapExactTokensForETHSupportingFeeOnTransferTokens.bind(this),
     };
 
@@ -52,10 +53,10 @@ export class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResul
 
         let selector = node.input.substring(0, 10);
         let swapDecoder = Object.entries(this.swapFunctions).find(([name, func]) => {
-            return ethers.utils.id(name).substring(0, 10) === selector;
+            return ethers.utils.id(FunctionFragment.from(name).format()).substring(0, 10) === selector;
         });
         let swapWithFeeDecoder = Object.entries(this.swapWithFeeFunctions).find(([name, func]) => {
-            return ethers.utils.id(name).substring(0, 10) === selector;
+            return ethers.utils.id(FunctionFragment.from(name).format()).substring(0, 10) === selector;
         });
         let decoder = swapDecoder || swapWithFeeDecoder;
 
@@ -63,7 +64,7 @@ export class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResul
 
         state.handled[node.id] = true;
 
-        let [inputs, outputs] = this.decodeFunction(node, state);
+        let [inputs, outputs] = this.decodeFunctionWithFragment(node, FunctionFragment.from(decoder[0]));
 
         let subcalls: TraceEntryCall[] = node.children.filter(
             (v) => v.type === 'call' && v.variant === 'call',
@@ -374,9 +375,9 @@ export type UniswapV2RouterAddLiquidityResult = {
 
 export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterAddLiquidityResult> {
     addLiquidityFunctions = {
-        'addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)':
+        'addLiquidity(address tokenA,address tokenB,uint256 amountADesired,uint256 amountBDesired,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB, uint liquidity)':
             this.decodeAddLiquidity.bind(this),
-        'addLiquidityETH(address,uint256,uint256,uint256,address,uint256)': this.decodeAddLiquidityETH.bind(this),
+        'addLiquidityETH(address token,uint256 amountTokenDesired,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256) returns (uint amountA, uint amountB, uint liquidity)': this.decodeAddLiquidityETH.bind(this),
     };
 
     constructor() {
@@ -391,14 +392,14 @@ export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterA
 
         let selector = node.input.substring(0, 10);
         let decoder = Object.entries(this.addLiquidityFunctions).find(([name, func]) => {
-            return ethers.utils.id(name).substring(0, 10) === selector;
+            return ethers.utils.id(FunctionFragment.from(name).format()).substring(0, 10) === selector;
         });
 
         if (!decoder) return null;
 
         state.handled[node.id] = true;
 
-        let [inputs, outputs] = this.decodeFunction(node, state);
+        let [inputs, outputs] = this.decodeFunctionWithFragment(node, FunctionFragment.from(decoder[0]));
 
         let subcalls: TraceEntryCall[] = node.children.filter(
             (v) => v.type === 'call' && v.variant === 'call',
@@ -534,16 +535,16 @@ export type UniswapV2RouterRemoveLiquidityResult = {
 
 export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2RouterRemoveLiquidityResult> {
     addLiquidityFunctions = {
-        'removeLiquidity(address,address,uint256,uint256,uint256,address,uint256)':
+        'removeLiquidity(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB)':
             this.decodeRemoveLiquidity.bind(this),
-        'removeLiquidityETH(address,uint256,uint256,uint256,address,uint256)': this.decodeRemoveLiquidityETH.bind(this),
-        'removeLiquidityWithPermit(address,address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)':
+        'removeLiquidityETH(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) returns (uint amountToken, uint amountETH)': this.decodeRemoveLiquidityETH.bind(this),
+        'removeLiquidityWithPermit(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountA, uint amountB)':
             this.decodeRemoveLiquidityWithPermit.bind(this),
-        'removeLiquidityETHWithPermit(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)':
+        'removeLiquidityETHWithPermit(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountToken, uint amountETH)':
             this.decodeRemoveLiquidityETHWithPermit.bind(this),
-        'removeLiquidityETHSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256)':
+        'removeLiquidityETHSupportingFeeOnTransferTokens(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB)':
             this.decodeRemoveLiquidityETHSupportingFeeOnTransferTokens.bind(this),
-        'removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256,bool,uint8,bytes32,bytes32)':
+        'removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountToken, uint amountETH)':
             this.decodeRemoveLiquidityETHWithPermitSupportingFeeOnTransferTokens.bind(this),
     };
 
@@ -559,14 +560,14 @@ export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2Rout
 
         let selector = node.input.substring(0, 10);
         let decoder = Object.entries(this.addLiquidityFunctions).find(([name, func]) => {
-            return ethers.utils.id(name).substring(0, 10) === selector;
+            return ethers.utils.id(FunctionFragment.from(name).format()).substring(0, 10) === selector;
         });
 
         if (!decoder) return null;
 
         state.handled[node.id] = true;
 
-        let [inputs, outputs] = this.decodeFunction(node, state);
+        let [inputs, outputs] = this.decodeFunctionWithFragment(node, FunctionFragment.from(decoder[0]));
 
         let subcalls: TraceEntryCall[] = node.children.filter(
             (v) => v.type === 'call' && v.variant === 'call',

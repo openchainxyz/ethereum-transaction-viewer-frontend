@@ -270,7 +270,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
                     {outputParamTreeView}
                 </Grid>
                 <Grid item>Subcall Logs:</Grid>
-                <Grid item width={'100%'} overflow={'auto'}>
+                <Grid item width={'100%'} overflow={'auto'} paddingBottom={'20px'}>
                     {Object.values(traceMetadata.nodesById)
                         .filter((v): v is TraceEntryLog => v.type === 'log')
                         .filter((v) => v.id.startsWith(node.id + '.'))

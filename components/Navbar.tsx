@@ -13,9 +13,19 @@ import { DarkMode, GitHub, LightMode, Twitter } from '@mui/icons-material';
 
 function Navbar() {
     const router = useRouter();
+    const { chain: queryChain, txhash: queryTxhash } = router.query;
+
     // sets the default chain to ethereum.
     const [chain, setChain] = React.useState('ethereum');
     const [txhash, setTxhash] = React.useState('');
+
+    React.useEffect(() => {
+        if (!queryChain || Array.isArray(queryChain)) return;
+        if (!queryTxhash || Array.isArray(queryTxhash)) return;
+
+        setChain(queryChain);
+        setTxhash(queryTxhash);
+    }, [queryChain, queryTxhash]);
 
     //Dark Mode Logic
     const [darkMode, setDarkMode] = React.useState(false);
@@ -38,7 +48,6 @@ function Navbar() {
             _element.style.background = '#FFFFFF';
         }
     }, [darkMode]);
-
     return (
         <div>
             <Head>
