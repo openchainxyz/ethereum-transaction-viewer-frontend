@@ -4,8 +4,8 @@ import { TraceTreeNodeLabel } from '../TraceTreeItem';
 import { DataRenderer } from '../DataRenderer';
 import { BigNumber, ethers } from 'ethers';
 import * as React from 'react';
-import {Fragment, Result} from '@ethersproject/abi';
-import {FunctionFragment} from "@ethersproject/abi/lib";
+import { Fragment, Result } from '@ethersproject/abi';
+import { FunctionFragment } from '@ethersproject/abi/lib';
 
 export type UniswapV2RouterSwapResult = {
     type: string;
@@ -26,10 +26,14 @@ export class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResul
             this.decodeSwapExactTokensForTokens.bind(this),
         'swapTokensForExactTokens(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
             this.decodeSwapTokensForExactTokens.bind(this),
-        'swapExactETHForTokens(uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapExactETHForTokens.bind(this),
-        'swapTokensForExactETH(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapTokensForExactETH.bind(this),
-        'swapExactTokensForETH(uint256 amonutIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapExactTokensForETH.bind(this),
-        'swapETHForExactTokens(uint256 amountOut,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)': this.decodeSwapETHForExactTokens.bind(this),
+        'swapExactETHForTokens(uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
+            this.decodeSwapExactETHForTokens.bind(this),
+        'swapTokensForExactETH(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
+            this.decodeSwapTokensForExactETH.bind(this),
+        'swapExactTokensForETH(uint256 amonutIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
+            this.decodeSwapExactTokensForETH.bind(this),
+        'swapETHForExactTokens(uint256 amountOut,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
+            this.decodeSwapETHForExactTokens.bind(this),
     };
 
     swapWithFeeFunctions = {
@@ -377,7 +381,8 @@ export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterA
     addLiquidityFunctions = {
         'addLiquidity(address tokenA,address tokenB,uint256 amountADesired,uint256 amountBDesired,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB, uint liquidity)':
             this.decodeAddLiquidity.bind(this),
-        'addLiquidityETH(address token,uint256 amountTokenDesired,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256) returns (uint amountA, uint amountB, uint liquidity)': this.decodeAddLiquidityETH.bind(this),
+        'addLiquidityETH(address token,uint256 amountTokenDesired,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256) returns (uint amountToken, uint amountETH, uint liquidity)':
+            this.decodeAddLiquidityETH.bind(this),
     };
 
     constructor() {
@@ -415,6 +420,7 @@ export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterA
 
         this.requestTokenMetadata(state, tokenA);
         this.requestTokenMetadata(state, tokenB);
+        this.requestTokenMetadata(state, pool);
 
         return {
             type: this.name,
@@ -537,7 +543,8 @@ export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2Rout
     addLiquidityFunctions = {
         'removeLiquidity(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB)':
             this.decodeRemoveLiquidity.bind(this),
-        'removeLiquidityETH(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) returns (uint amountToken, uint amountETH)': this.decodeRemoveLiquidityETH.bind(this),
+        'removeLiquidityETH(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) returns (uint amountToken, uint amountETH)':
+            this.decodeRemoveLiquidityETH.bind(this),
         'removeLiquidityWithPermit(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountA, uint amountB)':
             this.decodeRemoveLiquidityWithPermit.bind(this),
         'removeLiquidityETHWithPermit(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountToken, uint amountETH)':

@@ -35,7 +35,7 @@ function Navbar() {
     }, []);
 
     React.useEffect(() => {
-        window.localStorage.setItem('dark', darkMode);
+        window.localStorage.setItem('pref:dark', darkMode);
     }, [darkMode]);
 
     React.useEffect(() => {

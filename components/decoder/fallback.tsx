@@ -58,11 +58,11 @@ export class ERC20Decoder extends Decoder<ERC20DecoderResult> {
         return this.renderResult(
             'transfer',
             '#392b58',
-            ['from', 'to', 'amount', 'actor'],
+            ['amount', 'from', 'to', 'actor'],
             [
+                this.formatTokenAmount(opts, result.token, result.amount),
                 <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />,
                 <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />,
-                this.formatTokenAmount(opts, result.token, result.amount),
                 <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.actor} />,
             ],
         );
@@ -100,11 +100,11 @@ export class ValueTransferDecoder extends Decoder<ValueTransferDecoderResult> {
         return this.renderResult(
             'transfer',
             '#392b58',
-            ['from', 'to', 'amount'],
+            ['amount', 'from', 'to'],
             [
+                this.formatTokenAmount(opts, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', result.amount),
                 <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.from} />,
                 <DataRenderer chain={opts.chain} labels={opts.labels} preferredType={'address'} data={result.to} />,
-                this.formatTokenAmount(opts, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', result.amount),
             ],
         );
     }
