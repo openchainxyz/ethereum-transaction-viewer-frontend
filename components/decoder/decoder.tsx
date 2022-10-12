@@ -39,10 +39,24 @@ export const decode = (trace: TraceResult, metadata: TraceMetadata): DecodeResul
     };
 
     const visit = (node: TraceEntry): DecodeNode => {
+        if ((node.type === 'call' || node.type === 'create') && node.status !== 1)
+            return {
+                node: node,
+                results: [],
+                children: [],
+            };
+
         metadata.nodesById[node.id] = node;
 
         let results: DecodeResultCommon[] = decodeOrder
-            .map((v) => v.decode(node, state))
+            .map((v) => {
+                try {
+                    return v.decode(node, state);
+                } catch (e) {
+                    console.log('decoder failed to decode entry', v.name, node, e);
+                    return null;
+                }
+            })
             .filter((v): v is DecodeResultCommon => v !== null);
         let children: DecodeNode[] = [];
         if (node.type === 'call' || node.type === 'create') {

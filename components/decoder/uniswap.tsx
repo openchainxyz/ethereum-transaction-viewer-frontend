@@ -53,7 +53,6 @@ export class UniswapV2RouterSwapDecoder extends Decoder<UniswapV2RouterSwapResul
         if (state.handled[node.id]) return null;
 
         if (node.type !== 'call') return null;
-        if (node.status !== 1) return null;
 
         let selector = node.input.substring(0, 10);
         let swapDecoder = Object.entries(this.swapFunctions).find(([name, func]) => {
@@ -393,7 +392,6 @@ export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterA
         if (state.handled[node.id]) return null;
 
         if (node.type !== 'call') return null;
-        if (node.status !== 1) return null;
 
         let selector = node.input.substring(0, 10);
         let decoder = Object.entries(this.addLiquidityFunctions).find(([name, func]) => {
@@ -549,9 +547,9 @@ export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2Rout
             this.decodeRemoveLiquidityWithPermit.bind(this),
         'removeLiquidityETHWithPermit(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountToken, uint amountETH)':
             this.decodeRemoveLiquidityETHWithPermit.bind(this),
-        'removeLiquidityETHSupportingFeeOnTransferTokens(address tokenA,address tokenB,uint256 liquidity,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB)':
+        'removeLiquidityETHSupportingFeeOnTransferTokens(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline) returns (uint amountETH)':
             this.decodeRemoveLiquidityETHSupportingFeeOnTransferTokens.bind(this),
-        'removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountToken, uint amountETH)':
+        'removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(address token,uint256 liquidity,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256 deadline,bool approveMax,uint8 v,bytes32 r,bytes32 s) returns (uint amountETH)':
             this.decodeRemoveLiquidityETHWithPermitSupportingFeeOnTransferTokens.bind(this),
     };
 
@@ -563,7 +561,6 @@ export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2Rout
         if (state.handled[node.id]) return null;
 
         if (node.type !== 'call') return null;
-        if (node.status !== 1) return null;
 
         let selector = node.input.substring(0, 10);
         let decoder = Object.entries(this.addLiquidityFunctions).find(([name, func]) => {
