@@ -1,12 +1,15 @@
-import { Grid, Tooltip, Typography } from '@mui/material';
+import {Grid, TextField, Tooltip, Typography} from '@mui/material';
 import * as React from 'react';
-import { DateTime } from 'luxon';
+import {useContext} from 'react';
+import {DateTime} from 'luxon';
 import humanizeDuration from 'humanize-duration';
-import { formatUnits } from 'ethers/lib/utils';
-import { formatUnitsSmartly, formatUsd } from '../helpers';
-import { DataRenderer } from '../DataRenderer';
-import { PriceMetadata, TransactionInfoResponse } from '../types';
-import { getChain } from '../Chains';
+import {formatUnits} from 'ethers/lib/utils';
+import {formatUnitsSmartly, formatUsd} from '../helpers';
+import {DataRenderer} from '../DataRenderer';
+import {TransactionInfoResponse} from '../types';
+import {ChainConfig} from '../Chains';
+import {PriceMetadataContext} from '../metadata/prices';
+import {ethers} from "ethers";
 
 type TransactionAttributeGridProps = {
     children?: JSX.Element[];
@@ -21,7 +24,7 @@ export const TransactionAttributeGrid = (props: TransactionAttributeGridProps) =
 };
 
 type TransactionAttributeRowProps = {
-    children?: JSX.Element[];
+    children?: JSX.Element | JSX.Element[];
 };
 
 export const TransactionAttributeRow = (props: TransactionAttributeRowProps) => {
@@ -41,31 +44,28 @@ type TransactionAttributeProps = {
 export const TransactionAttribute = (props: TransactionAttributeProps) => {
     return (
         <Grid item>
-            <span style={{ color: '#a8a19f' }}>{props.name}:</span>&nbsp;{props.children}
+            <span style={{color: '#a8a19f'}}>{props.name}:</span>&nbsp;{props.children}
         </Grid>
     );
 };
 
 type TransactionInfoProps = {
     transactionResponse: TransactionInfoResponse;
-    priceMetadata: PriceMetadata;
-    chain: string;
+    chainInfo: ChainConfig;
 };
 
 export const TransactionInfo = (props: TransactionInfoProps) => {
-    const { transactionResponse, priceMetadata, chain } = props;
-
-    const chainInfo = getChain(chain);
-    if (!chainInfo) throw new Error('weird');
+    const {transactionResponse, chainInfo} = props;
+    const priceMetadata = useContext(PriceMetadataContext);
 
     let blockTimestamp = DateTime.fromSeconds(transactionResponse.metadata.timestamp);
 
-    // use swedish locale to get yyyy-mm-dd lol
     let localTime = blockTimestamp.toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
     let utcTime = blockTimestamp.toUTC().toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
-    let timeSince = humanizeDuration(DateTime.now().toMillis() - blockTimestamp.toMillis(), {
-        largest: 2,
-    });
+    let timeSince = humanizeDuration(
+        DateTime.now().toMillis() - blockTimestamp.toMillis(),
+        {largest: 2},
+    );
 
     let gasPriceInfo;
     if (transactionResponse.transaction.type === 2) {
@@ -101,13 +101,14 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
         transactionStatus = 'Unknown';
     }
 
-    let historicalEthPrice = priceMetadata.historicalPrices[chainInfo.nativeTokenAddress];
-    let currentEthPrice = priceMetadata.currentPrices[chainInfo.nativeTokenAddress];
+    let historicalEthPrice = priceMetadata.prices[chainInfo.coingeckoId]?.historicalPrice;
+    let currentEthPrice = priceMetadata.prices[chainInfo.coingeckoId]?.currentPrice;
 
-    let transactionValue = transactionResponse.transaction.value;
-    let transactionFee = transactionResponse.receipt.gasUsed.mul(
-        transactionResponse.receipt.effectiveGasPrice || transactionResponse.transaction.gasPrice,
-    );
+    let transactionValue = transactionResponse.transaction.value.toBigInt();
+    let transactionFee =
+        transactionResponse.receipt.gasUsed.toBigInt() *
+        (transactionResponse.receipt.effectiveGasPrice.toBigInt() ||
+            transactionResponse.transaction.gasPrice?.toBigInt());
 
     let transactionValueStr = formatUnitsSmartly(transactionValue, chainInfo.nativeSymbol);
     let transactionFeeStr = formatUnitsSmartly(transactionFee, chainInfo.nativeSymbol);
@@ -121,11 +122,11 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                 <Tooltip
                     title={
                         currentEthPrice
-                            ? formatUsd(transactionValue.mul(currentEthPrice)) + ' today'
+                            ? formatUsd(transactionValue * currentEthPrice) + ' today'
                             : 'Current price unknown'
                     }
                 >
-                    <span>{formatUsd(transactionValue.mul(historicalEthPrice))}</span>
+                    <span>{formatUsd(transactionValue * historicalEthPrice)}</span>
                 </Tooltip>
                 )
             </>
@@ -136,15 +137,32 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                 <Tooltip
                     title={
                         currentEthPrice
-                            ? formatUsd(transactionFee.mul(currentEthPrice)) + ' today'
+                            ? formatUsd(transactionFee * currentEthPrice) + ' today'
                             : 'Current price unknown'
                     }
                 >
-                    <span>{formatUsd(transactionFee.mul(historicalEthPrice))}</span>
+                    <span>{formatUsd(transactionFee * historicalEthPrice)}</span>
                 </Tooltip>
                 )
             </>
         );
+    }
+
+    let calldataAsUtf8;
+    {
+        try {
+            const data = transactionResponse.transaction.data.replace(/(00)+$/g, '');
+            const utf8Str = ethers.utils.toUtf8String(data);
+            if (!/[\x00-\x09\x0E-\x1F]/.test(utf8Str)) {
+                calldataAsUtf8 = <TransactionAttributeRow>
+                    <TransactionAttribute name={'Message'}>
+                        <br/>
+                        {utf8Str}
+                    </TransactionAttribute>
+                </TransactionAttributeRow>
+            }
+        } catch {
+        }
     }
 
     return (
@@ -172,18 +190,16 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'From'}>
                             <DataRenderer
-                                chain={chain}
+                                chain={chainInfo.id}
                                 showCopy={true}
-                                labels={transactionResponse.metadata.labels}
                                 preferredType={'address'}
                                 data={transactionResponse.transaction.from}
                             />
                         </TransactionAttribute>
                         <TransactionAttribute name={transactionResponse.transaction.to ? 'To' : 'Created'}>
                             <DataRenderer
-                                chain={chain}
+                                chain={chainInfo.id}
                                 showCopy={true}
-                                labels={transactionResponse.metadata.labels}
                                 preferredType={'address'}
                                 data={transactionResponse.transaction.to || transactionResponse.receipt.contractAddress}
                             />
@@ -217,10 +233,11 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                             {transactionResponse.transaction.type === 2
                                 ? 'EIP-1559'
                                 : transactionResponse.transaction.type === 1
-                                ? 'Access List'
-                                : 'Legacy'}
+                                    ? 'Access List'
+                                    : 'Legacy'}
                         </TransactionAttribute>
                     </TransactionAttributeRow>
+                    {calldataAsUtf8}
                 </TransactionAttributeGrid>
             </Typography>
         </>

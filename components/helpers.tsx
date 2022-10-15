@@ -82,6 +82,22 @@ export const theme = createTheme({
                 },
             },
         },
+        MuiTableCell: {
+            styleOverrides: {
+                root: {
+                    padding: '0px 16px',
+                    fontFamily: 'monospace',
+                    letterSpacing: 'initial',
+                    fontSize: '13px',
+                },
+                // head: {
+                //     fontFamily: 'monospace',
+                //     letterSpacing: 'initial',
+                // },
+                // body: {
+                // },
+            },
+        },
     },
 });
 
@@ -154,16 +170,16 @@ export const findAffectedContract = (
 ): [TraceEntryCallable, TraceEntryCallable[]] => {
     let path: TraceEntryCallable[] = [];
 
-    let parents = node.id.split('.');
+    let parents = node.path.split('.');
 
     while (parents.length > 0) {
         parents.pop();
 
-        let parentNode = metadata.nodesById[parents.join('.')];
-        if (parentNode.type === 'call' || parentNode.type === 'create') {
+        let parentNode = metadata.nodesByPath[parents.join('.')];
+        if (parentNode.type === 'call') {
             path.push(parentNode);
 
-            if ((parentNode.type === 'call' && parentNode.variant !== 'delegatecall') || parentNode.type === 'create') {
+            if (parentNode.variant !== 'delegatecall') {
                 path.reverse();
 
                 return [parentNode, path];
@@ -200,8 +216,30 @@ export const formatUnitsSmartly = (value: BigNumberish, nativeUnit?: string): st
     return `${formattedValue} ${chosenUnit}`;
 };
 
-export const formatUsd = (val: BigNumber): string => {
+export const formatUsd = (val: BigNumberish): string => {
+    val = BigNumber.from(val);
     let formatted = formatUnits(val, 22);
     let [left, right] = formatted.split('.');
-    return `${left}.${right.substring(0, 4)} USD`;
+
+    // we want at least 4 decimal places on the right
+    right = right.substring(0, 4).padEnd(4, '0');
+
+    const isNegative = left.startsWith('-');
+    if (isNegative) {
+        left = left.substring(1);
+    }
+
+    // we want comma delimited triplets on the left
+    if (left.length > 3) {
+        let parts = [];
+        if (left.length % 3 !== 0) {
+            parts.push(left.substring(0, left.length % 3));
+            left = left.substring(left.length % 3);
+        }
+        parts.push(chunkString(left, 3));
+
+        left = parts.join(',');
+    }
+
+    return `${isNegative ? '-' : ''}${left}.${right.substring(0, 4)} USD`;
 };

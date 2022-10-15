@@ -84,7 +84,6 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
                 let dataRenderer = (
                     <DataRenderer
                         chain={props.traceMetadata.chain}
-                        labels={props.traceMetadata.labels}
                         data={v.value}
                         preferredType={v.type}
                     />
@@ -93,7 +92,7 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
                 return (
                     <TreeItem
                         key={i}
-                        nodeId={traceResult.txhash + '.' + node.id + '.trace.' + i}
+                        nodeId={traceResult.txhash + '.' + node.path + '.trace.' + i}
                         label={
                             <TreeItemContentSpan>
                                 {v.name}:&nbsp;{dataRenderer}
@@ -120,7 +119,7 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
         <>
             <Grid container direction={'column'}>
                 <Grid item>
-                    Trace Path: <code>{node.id}</code>
+                    Trace Path: <code>{node.path}</code>
                 </Grid>
                 <Grid item>
                     Slot: <code>{node.slot}</code>
@@ -145,7 +144,6 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
                             {v.name}:&nbsp;
                             <DataRenderer
                                 chain={props.traceMetadata.chain}
-                                labels={props.traceMetadata.labels}
                                 data={v.value}
                                 preferredType={v.type}
                             />
@@ -159,7 +157,7 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
     return (
         <>
             <TraceTreeDialog title={dialogTitle} content={dialogContent} open={open} setOpen={setOpen} />
-            <TraceTreeItem nodeId={node.id} treeContent={treeContent}>
+            <TraceTreeItem nodeId={node.path} treeContent={treeContent}>
                 {children}
             </TraceTreeItem>
         </>

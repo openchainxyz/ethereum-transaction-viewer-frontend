@@ -1,5 +1,5 @@
 import { EventFragment, FunctionFragment, JsonFragment } from '@ethersproject/abi/lib';
-import { BigNumber, ethers, Transaction } from 'ethers';
+import { ethers, Transaction } from 'ethers';
 import { TransactionReceipt } from '@ethersproject/abstract-provider';
 
 export type AddressInfo = {
@@ -12,8 +12,12 @@ export type AddressInfo = {
     eventFragments: Record<string, EventFragment>;
 };
 
-export type TraceEntryCallable = {
-    id: string;
+export type TraceEntryCall = {
+    path: string;
+    type: 'call';
+    variant: 'call' | 'callcode' | 'staticcall' | 'delegatecall' | 'create' | 'create2' | 'selfdestruct';
+    gas: number;
+    isPrecompile: boolean;
     from: string;
     to: string;
     input: string;
@@ -27,64 +31,36 @@ export type TraceEntryCallable = {
     children: TraceEntry[];
 };
 
-export type TraceEntryCall = TraceEntryCallable & {
-    id: string;
-    type: 'call';
-    variant: 'call' | 'callcode' | 'staticcall' | 'delegatecall';
-    gas: number;
-    isPrecompile: boolean;
-};
-
-export type TraceEntryCreate = TraceEntryCallable & {
-    id: string;
-    type: 'create';
-    variant: 'create' | 'create2';
-};
-
-export type TraceEntrySelfdestruct = {
-    id: string;
-    type: 'selfdestruct';
-    from: string;
-    to: string;
-    value: string;
-};
-
 export type TraceEntryLog = {
-    id: string;
+    path: string;
     type: 'log';
     topics: string[];
     data: string;
 };
 
 export type TraceEntrySload = {
-    id: string;
+    path: string;
     type: 'sload';
     slot: string;
     value: string;
 };
 
 export type TraceEntrySstore = {
-    id: string;
+    path: string;
     type: 'sstore';
     slot: string;
     oldValue: string;
     newValue: string;
 };
 
-export type TraceEntry =
-    | TraceEntryCall
-    | TraceEntryCreate
-    | TraceEntryLog
-    | TraceEntrySelfdestruct
-    | TraceEntrySload
-    | TraceEntrySstore;
+export type TraceEntry = TraceEntryCall | TraceEntryLog | TraceEntrySload | TraceEntrySstore;
 
 export type TraceResult = {
     chain: string;
     txhash: string;
     preimages: Record<string, string>;
     addresses: Record<string, Record<string, AddressInfo>>;
-    trace: TraceEntryCall | TraceEntryCreate;
+    entrypoint: TraceEntryCall;
 
     abi: ethers.utils.Interface;
 };
@@ -118,6 +94,14 @@ export type RawSlotInfo = BaseSlotInfo & {
     type: 'raw';
 };
 
+export type DynamicSlotInfo = BaseSlotInfo & {
+    type: 'dynamic';
+
+    baseSlot: string;
+    key: string;
+    offset: number;
+};
+
 export type MappingSlotInfo = BaseSlotInfo & {
     type: 'mapping';
 
@@ -141,38 +125,21 @@ export type StructSlotInfo = BaseSlotInfo & {
     offset: number;
 };
 
-export type SlotInfo = RawSlotInfo | MappingSlotInfo | ArraySlotInfo | StructSlotInfo;
+export type SlotInfo = RawSlotInfo | DynamicSlotInfo | MappingSlotInfo | ArraySlotInfo | StructSlotInfo;
 
 export type TraceMetadata = {
     chain: string;
 
-    // map of address => label (we cant label by codehash)
-    labels: Record<string, string>;
-
     // map of address => codehash => abi
     abis: Record<string, Record<string, ethers.utils.Interface>>;
 
-    nodesById: Record<string, TraceEntry>;
+    nodesByPath: Record<string, TraceEntry>;
 };
 
 export type StorageMetadata = {
     fetched: Record<string, Record<string, Record<string, boolean>>>;
 
     slots: Record<string, Record<string, Record<string, SlotInfo>>>;
-};
-
-export type PriceMetadata = {
-    currentPrices: Record<string, BigNumber>;
-    historicalPrices: Record<string, BigNumber>;
-};
-
-export type TokenInfo = {
-    symbol: string;
-    decimals?: number;
-};
-
-export type TokenMetadata = {
-    tokens: Record<string, TokenInfo>;
 };
 
 export type TransactionMetadata = {

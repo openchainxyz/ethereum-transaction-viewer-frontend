@@ -26,9 +26,9 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
 
     const [open, setOpen] = React.useState(false);
 
-    let parentId = node.id.split('.');
+    let parentId = node.path.split('.');
     parentId.pop();
-    let parentNode = traceMetadata.nodesById[parentId.join('.')] as TraceEntryCallable;
+    let parentNode = traceMetadata.nodesByPath[parentId.join('.')] as TraceEntryCallable;
 
     const [eventFragment, setEventFragment, parsedEventFragment] = useEventFragment(
         (() => {
@@ -103,7 +103,6 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
             {
                 <DataRenderer
                     chain={props.traceMetadata.chain}
-                    labels={props.traceMetadata.labels}
                     data={parentNode.to}
                     preferredType={'address'}
                     makeLink={false}
@@ -116,7 +115,7 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
         <>
             <Grid container direction={'column'}>
                 <Grid item>
-                    Trace Path: <code>{node.id}</code>
+                    Trace Path: <code>{node.path}</code>
                 </Grid>
                 <Grid item>
                     Event Topics: <br />
@@ -145,14 +144,14 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
                     {parsedEventFragment && parsedEvent ? (
                         <ParamTreeView
                             traceMetadata={traceMetadata}
-                            path={node.id + '.input'}
+                            path={node.path + '.input'}
                             params={parsedEventFragment.inputs}
                             values={parsedEvent}
                         />
                     ) : (
                         <ParamTreeView
                             traceMetadata={traceMetadata}
-                            path={node.id + '.input'}
+                            path={node.path + '.input'}
                             params={fakeParams}
                             values={fakeValues}
                         />
@@ -174,7 +173,6 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
                 <>
                     <DataRenderer
                         chain={props.traceMetadata.chain}
-                        labels={props.traceMetadata.labels}
                         preferredType={'address'}
                         data={parentNode.to}
                     />
@@ -188,7 +186,7 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
     return (
         <>
             <TraceTreeDialog title={dialogTitle} content={dialogContent} open={open} setOpen={setOpen} />
-            <TraceTreeItem nodeId={node.id} treeContent={treeContent}>
+            <TraceTreeItem nodeId={node.path} treeContent={treeContent}>
                 {children}
             </TraceTreeItem>
         </>

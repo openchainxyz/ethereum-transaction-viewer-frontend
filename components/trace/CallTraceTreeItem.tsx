@@ -187,7 +187,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
         inputParamTreeView = (
             <ParamTreeView
                 traceMetadata={traceMetadata}
-                path={node.id + '.input'}
+                path={node.path + '.input'}
                 params={fragmentInputs}
                 values={parsedInput}
             />
@@ -202,7 +202,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
         outputParamTreeView = (
             <ParamTreeView
                 traceMetadata={traceMetadata}
-                path={node.id + '.output'}
+                path={node.path + '.output'}
                 params={fragmentOutputs}
                 values={parsedOutput}
             />
@@ -215,7 +215,6 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
         <>
             <DataRenderer
                 chain={props.traceMetadata.chain}
-                labels={props.traceMetadata.labels}
                 data={node.to}
                 preferredType={'address'}
                 makeLink={false}
@@ -227,7 +226,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
         <>
             <Grid container direction={'column'}>
                 <Grid item>
-                    Trace Path: <code>{node.id}</code>
+                    Trace Path: <code>{node.path}</code>
                 </Grid>
                 <Grid item>
                     Type: <code>{node.variant}</code>
@@ -271,16 +270,16 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
                 </Grid>
                 <Grid item>Subcall Logs:</Grid>
                 <Grid item width={'100%'} overflow={'auto'} paddingBottom={'20px'}>
-                    {Object.values(traceMetadata.nodesById)
+                    {Object.values(traceMetadata.nodesByPath)
                         .filter((v): v is TraceEntryLog => v.type === 'log')
-                        .filter((v) => v.id.startsWith(node.id + '.'))
-                        .sort((a, b) => a.id.localeCompare(b.id))
+                        .filter((v) => v.path.startsWith(node.path + '.'))
+                        .sort((a, b) => a.path.localeCompare(b.path))
                         .map((node) => {
                             return (
                                 <LogTraceTreeItem
-                                    key={node.id}
+                                    key={node.path}
                                     onClick={() => {
-                                        props.expandTo(node.id);
+                                        props.expandTo(node.path);
                                     }}
                                     showAddress={true}
                                     traceResult={traceResult}
@@ -321,7 +320,6 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     let addressContent = (
         <DataRenderer
             chain={props.traceMetadata.chain}
-            labels={props.traceMetadata.labels}
             data={node.to}
             preferredType={'address'}
             makeLink={!node.isPrecompile}
@@ -361,7 +359,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     return (
         <>
             <TraceTreeDialog title={dialogTitle} content={dialogContent} open={open} setOpen={setOpen} />
-            <TraceTreeItem nodeId={node.id} treeContent={treeContent}>
+            <TraceTreeItem nodeId={node.path} treeContent={treeContent}>
                 {children}
             </TraceTreeItem>
         </>

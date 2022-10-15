@@ -1,9 +1,13 @@
-import { ParamType } from '@ethersproject/abi/lib';
-import { BigNumber, ethers } from 'ethers';
+import {ParamType} from '@ethersproject/abi/lib';
+import {BigNumber, ethers} from 'ethers';
 import * as React from 'react';
-import { SpanIconButton } from './SpanIconButton';
+import {useContext} from 'react';
+import {SpanIconButton} from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { getChain } from './Chains';
+import {getChain} from './Chains';
+import {LabelMetadataContext} from "./metadata/labels";
+import {Button, IconButton, Tooltip} from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
     if (paramType.indexed && value.hash) {
@@ -56,16 +60,18 @@ let formatValueWithParamType = (
 
 type DataRendererProps = {
     chain?: string;
-    labels: Record<string, string>;
+    labels?: Record<string, string>,
     data?: string;
     decodedData?: any;
     showCopy?: boolean;
     makeLink?: boolean;
-    preferredType: string | null;
+    preferredType: string | ParamType | null;
     truncate?: boolean;
 };
 
 export const DataRenderer = (props: DataRendererProps) => {
+    const labelMetadata = useContext(LabelMetadataContext);
+
     const abiCoder = ethers.utils.defaultAbiCoder;
 
     let chain = props.chain || 'ethereum';
@@ -137,8 +143,44 @@ export const DataRenderer = (props: DataRendererProps) => {
             stringified,
             truncate || false,
             makeLink,
-            props.labels,
+            props.labels || labelMetadata.labels,
         );
+
+        if (paramType.baseType === 'address') {
+            rendered = (
+                <Tooltip arrow placement={"top"} title={
+                    <span style={{cursor: 'pointer'}} onClick={() => {
+                        const address = stringified.toLowerCase();
+
+                        let newLabel = prompt("Enter a new label", (props.labels || labelMetadata.labels)[address] || address);
+                        if (newLabel !== null && newLabel !== address) {
+                            labelMetadata.updater(prevState => {
+                                const newState = {...prevState};
+
+                                if (!(chain in newState.customLabels)) {
+                                    newState.customLabels[chain] = {};
+                                }
+                                newState.labels[address] = newLabel || newState.labels[address];
+                                newState.customLabels[chain][address] = newLabel || '';
+                                localStorage.setItem("pref:labels", JSON.stringify(newState.customLabels));
+
+                                if (chain === 'ethereum') {
+                                    fetch(`https://tags.eth.samczsun.com/api/v1/address/${address}`, {
+                                        method: 'POST',
+                                        body: JSON.stringify({
+                                            label: newLabel,
+                                        }),
+                                    }).then(console.log).catch(console.log);
+                                }
+
+                                return newState;
+                            })
+                        }
+                    }}>[Edit Label]</span>
+                }>{rendered}</Tooltip>
+            );
+        }
+
         return (
             <>
                 {copyButton}
@@ -147,6 +189,7 @@ export const DataRenderer = (props: DataRendererProps) => {
             </>
         );
     } catch (e) {
+        console.log('failed to render', props, e);
         return <>{props.data}</>;
     }
 };

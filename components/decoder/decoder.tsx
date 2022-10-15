@@ -1,66 +1,192 @@
-import { TraceEntry, TraceMetadata, TraceResult } from '../types';
-import { DecodeFormatOpts, DecodeNode, Decoder, DecodeResult, DecodeResultCommon, DecodeState } from './types';
+import { TraceEntryCall, TraceEntryLog, TraceMetadata, TraceResult } from '../types';
 import {
-    UniswapV2AddLiquidityEth,
-    UniswapV2ExactEthForTokensDecoder,
-    UniswapV2ExactTokensForEthSupportingFeeOnTransferTokens,
-    UniswapV2ExactTokensForTokens,
-    UniswapV2RouterAddLiquidityDecoder,
-    UniswapV2RouterRemoveLiquidityDecoder,
-    UniswapV2RouterSwapDecoder,
-} from './uniswap';
-import { ERC20Decoder, ValueTransferDecoder } from './fallback';
+    BaseAction,
+    DecodeFormatOpts,
+    Decoder,
+    DecoderInput,
+    DecoderOutput,
+    DecoderState,
+    MetadataRequest,
+} from './types';
+import { UniswapV2RouterSwapDecoder } from './uniswap';
+import { TransferDecoder } from './fallback';
+import { BigNumber, ethers } from 'ethers';
+import { Log } from '@ethersproject/abstract-provider';
+import { Interface } from '@ethersproject/abi';
+import { findAffectedContract } from '../helpers';
+import {ENSDecoder} from "./ens";
 
-const allDecoders: Record<string, Decoder<any>> = {};
-const decodeOrder: Decoder<any>[] = [];
+const allDecoders: Record<string, Decoder<BaseAction>> = {};
+const decodeOrder: Decoder<BaseAction>[] = [];
 
-export const registerDecoder = (decoder: Decoder<any>) => {
+export const registerDecoder = (decoder: Decoder<BaseAction>) => {
     decodeOrder.push(decoder);
     allDecoders[decoder.name] = decoder;
 };
 
 registerDecoder(new UniswapV2RouterSwapDecoder());
-registerDecoder(new UniswapV2RouterAddLiquidityDecoder());
-registerDecoder(new UniswapV2RouterRemoveLiquidityDecoder());
+registerDecoder(new ENSDecoder());
+// registerDecoder(new UniswapV2RouterAddLiquidityDecoder());
+// registerDecoder(new UniswapV2RouterRemoveLiquidityDecoder());
 
 // must come last!
-registerDecoder(new ValueTransferDecoder());
-registerDecoder(new ERC20Decoder());
+registerDecoder(new TransferDecoder());
 
-export const decode = (trace: TraceResult, metadata: TraceMetadata): DecodeResult => {
-    const requestedMetadata = {
-        tokens: new Set<string>(),
-    };
-    const state: DecodeState = {
-        trace: trace,
-        metadata: metadata,
-        requestedMetadata: requestedMetadata,
-        handled: {},
+export const decode = (trace: TraceResult, metadata: TraceMetadata): [DecoderOutput, MetadataRequest] => {
+    let logIndex = 0;
+    let indexToPath: Record<number, string> = {};
+
+    const flattenLogs = (node: TraceEntryCall, recursive: boolean): Array<Log> => {
+        const ourLogs = node.children
+            .filter((node): node is TraceEntryLog => node.type === 'log')
+            .map((logNode) => {
+                const [affected] = findAffectedContract(metadata, logNode);
+                indexToPath[logIndex] = logNode.path;
+                const log: Log = {
+                    address: ethers.utils.getAddress(affected.to),
+                    blockHash: '',
+                    blockNumber: 0,
+                    data: logNode.data,
+                    logIndex: logNode.path,
+                    removed: false,
+                    topics: logNode.topics,
+                    transactionHash: trace.txhash,
+                    transactionIndex: 0,
+                };
+                return log;
+            });
+        if (!recursive) {
+            return ourLogs;
+        }
+
+        node.children
+            .filter((node): node is TraceEntryCall => node.type === 'call')
+            .forEach((v) => {
+                ourLogs.push(...flattenLogs(v, true));
+            });
+
+        return ourLogs;
     };
 
-    const visit = (node: TraceEntry): DecodeNode => {
-        if ((node.type === 'call' || node.type === 'create') && node.status !== 1)
+    const remap = (node: TraceEntryCall, parentAbi?: Interface): DecoderInput => {
+        let thisAbi = new Interface([
+            ...metadata.abis[node.to][node.codehash].fragments,
+            ...(parentAbi?.fragments || []),
+        ]);
+
+        const logs = flattenLogs(node, false);
+        const children = node.children
+            .filter((node): node is TraceEntryCall => node.type === 'call')
+            .map((v) => {
+                if (v.variant === 'delegatecall') {
+                    return remap(v, thisAbi);
+                } else {
+                    return remap(v, undefined);
+                }
+            });
+
+        return {
+            id: node.path,
+            type: node.variant,
+            from: ethers.utils.getAddress(node.from),
+            to: ethers.utils.getAddress(node.to),
+            value: BigNumber.from(node.value),
+            calldata: ethers.utils.arrayify(node.input),
+
+            status: node.status == 1,
+            logs: logs,
+
+            returndata: ethers.utils.arrayify(node.output),
+            children: children,
+
+            childOrder: node.children
+                .filter((node): node is TraceEntryLog | TraceEntryCall => node.type === 'log' || node.type === 'call')
+                .map((v) => {
+                    if (v.type === 'log') {
+                        return ['log', logs.findIndex((log) => log.logIndex === v.path)];
+                    } else {
+                        return ['call', children.findIndex((child) => child.id === v.path)];
+                    }
+                }),
+
+            abi: thisAbi,
+        };
+    };
+
+    const state = new DecoderState();
+    const input = remap(trace.entrypoint);
+
+    const visit = (node: DecoderInput): DecoderOutput => {
+        if (node.failed) {
+            // we don't decode anything that failed, because there should be no reason
+            // to care about something that had no effect
             return {
                 node: node,
                 results: [],
                 children: [],
             };
+        }
 
-        metadata.nodesById[node.id] = node;
+        const decodeLog = (child: DecoderInput, log: Log): DecoderOutput => {
+            const output: DecoderOutput = {
+                node: log,
+                results: [],
+                children: [],
+            };
 
-        let results: DecodeResultCommon[] = decodeOrder
+            decodeOrder.forEach((v) => {
+                try {
+                    const results = v.decodeLog(state, node, log);
+                    if (!results) return;
+
+                    if (Array.isArray(results)) {
+                        output.results.push(...results);
+                    } else {
+                        output.results.push(results);
+                    }
+                } catch (e) {
+                    console.log('decoder failed to decode log', v.name, node, log, e);
+                }
+            });
+
+            return output;
+        };
+
+        let results = decodeOrder
             .map((v) => {
                 try {
-                    return v.decode(node, state);
+                    return v.decodeCall(state, node);
                 } catch (e) {
-                    console.log('decoder failed to decode entry', v.name, node, e);
-                    return null;
+                    console.log('decoder failed to decode call', v.name, node, e);
                 }
             })
-            .filter((v): v is DecodeResultCommon => v !== null);
-        let children: DecodeNode[] = [];
-        if (node.type === 'call' || node.type === 'create') {
-            children = node.children.map(visit);
+            .filter((v): v is BaseAction | BaseAction[] => v !== null)
+            .flatMap((v) => v);
+
+        let children = [];
+        if (node.childOrder) {
+            children = node.childOrder.map((child) => {
+                if (child[0] === 'log') {
+                    return decodeLog(node, node.logs[child[1]]);
+                } else {
+                    return visit(node.children[child[1]]);
+                }
+            });
+        } else {
+            if (node.children) {
+                children.push(
+                    ...node.children.map((child) => {
+                        return visit(child);
+                    }),
+                );
+            }
+            if (node.logs) {
+                children.push(
+                    ...node.logs.map((log) => {
+                        return decodeLog(node, log);
+                    }),
+                );
+            }
         }
 
         return {
@@ -70,12 +196,9 @@ export const decode = (trace: TraceResult, metadata: TraceMetadata): DecodeResul
         };
     };
 
-    return {
-        root: visit(trace.trace),
-        requestedMetadata: requestedMetadata,
-    };
+    return [visit(input), state.requestedMetadata];
 };
 
-export const format = (result: DecodeResultCommon, opts: DecodeFormatOpts): JSX.Element => {
+export const format = (result: BaseAction, opts: DecodeFormatOpts): JSX.Element => {
     return allDecoders[result.type].format(result, opts);
 };

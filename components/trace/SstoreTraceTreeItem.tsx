@@ -85,7 +85,6 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                 let oldDataRenderer = (
                     <DataRenderer
                         chain={props.traceMetadata.chain}
-                        labels={props.traceMetadata.labels}
                         data={v.oldValue}
                         preferredType={v.type}
                     />
@@ -93,7 +92,6 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                 let newDataRenderer = (
                     <DataRenderer
                         chain={props.traceMetadata.chain}
-                        labels={props.traceMetadata.labels}
                         data={v.newValue}
                         preferredType={v.type}
                     />
@@ -102,7 +100,7 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                 return (
                     <TreeItem
                         key={i}
-                        nodeId={traceResult.txhash + '.' + node.id + '.trace.' + i}
+                        nodeId={traceResult.txhash + '.' + node.path + '.trace.' + i}
                         label={
                             <TreeItemContentSpan>
                                 {v.name}:&nbsp;{oldDataRenderer}&nbsp;→&nbsp;
@@ -130,7 +128,7 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
         <>
             <Grid container direction={'column'}>
                 <Grid item>
-                    Trace Path: <code>{node.id}</code>
+                    Trace Path: <code>{node.path}</code>
                 </Grid>
                 <Grid item>
                     Slot: <code>{node.slot}</code>
@@ -156,7 +154,6 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                     let oldDataRenderer = (
                         <DataRenderer
                             chain={props.traceMetadata.chain}
-                            labels={props.traceMetadata.labels}
                             data={v.oldValue}
                             preferredType={v.type}
                         />
@@ -164,7 +161,6 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                     let newDataRenderer = (
                         <DataRenderer
                             chain={props.traceMetadata.chain}
-                            labels={props.traceMetadata.labels}
                             data={v.newValue}
                             preferredType={v.type}
                         />
@@ -198,7 +194,7 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
     return (
         <>
             <TraceTreeDialog title={dialogTitle} content={dialogContent} open={open} setOpen={setOpen} />
-            <TraceTreeItem nodeId={node.id} treeContent={treeContent}>
+            <TraceTreeItem nodeId={node.path} treeContent={treeContent}>
                 {children}
             </TraceTreeItem>
         </>
