@@ -2,13 +2,11 @@ import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import * as React from 'react';
 
-import { ThemeProvider } from '@mui/material';
 import { Box } from '@mui/system';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { theme } from '../components/helpers';
-import { SupportedChains } from '../components/Chains';
+import { SupportedChains } from './Chains';
 import { DarkMode, GitHub, LightMode, Twitter } from '@mui/icons-material';
 
 function Navbar() {
@@ -28,18 +26,29 @@ function Navbar() {
     }, [queryChain, queryTxhash]);
 
     //Dark Mode Logic
-    const [darkMode, setDarkMode] = React.useState(false);
+    const initialDarkValue = false;
+    const [darkMode, setDarkMode] = React.useState(initialDarkValue);
+    const prefDarkKey = 'pref:dark';
 
     React.useEffect(() => {
-        setDarkMode(JSON.parse(window.localStorage.getItem('pref:dark')));
-    }, []);
+        const darkItem = window.localStorage.getItem(prefDarkKey);
+        let darkValue = initialDarkValue;
+        if (darkItem) {
+            try {
+                darkValue = JSON.parse(darkItem);
+            } catch (e) {
+                // ignore
+            }
+        }
+        setDarkMode(darkValue);
+    }, [initialDarkValue]);
 
     React.useEffect(() => {
-        window.localStorage.setItem('pref:dark', darkMode);
+        window.localStorage.setItem(prefDarkKey, JSON.stringify(darkMode));
     }, [darkMode]);
 
     React.useEffect(() => {
-        var _element = document.documentElement;
+        const _element = document.documentElement;
         if (darkMode) {
             _element.classList.add('dark');
             _element.style.background = '#12181f';
@@ -48,6 +57,7 @@ function Navbar() {
             _element.style.background = '#FFFFFF';
         }
     }, [darkMode]);
+
     return (
         <div>
             <Head>
