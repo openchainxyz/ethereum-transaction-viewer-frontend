@@ -82,6 +82,26 @@ export const SupportedChains = [
         rpcUrl: 'https://rpcapi.fantom.network',
         blockexplorerUrl: 'https://ftmscan.com',
     },
+    {
+        id: 'moonbeam',
+        displayName: 'Moonbeam',
+        nativeTokenAddress: '0x6eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        nativeSymbol: 'GLMR',
+        coingeckoId: 'coingecko:moonbeam',
+        defillamaPrefix: 'moonbeam',
+        rpcUrl: 'https://rpc.api.moonbeam.network',
+        blockexplorerUrl: 'https://moonscan.io',
+    },
+    {
+        id: 'moonriver',
+        displayName: 'Moonriver',
+        nativeTokenAddress: '0x7eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        nativeSymbol: 'MOVR',
+        coingeckoId: 'coingecko:moonriver',
+        defillamaPrefix: 'moonriver',
+        rpcUrl: 'https://rpc.moonriver.moonbeam.network',
+        blockexplorerUrl: 'https://moonriver.moonscan.io',
+    },
 ];
 
 export const getChain = (id: string): ChainConfig | undefined => {
