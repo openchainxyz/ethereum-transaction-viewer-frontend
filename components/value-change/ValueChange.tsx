@@ -1,23 +1,24 @@
-import { Box, Collapse, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import {Box, Collapse, Table, TableBody, TableCell, TableHead, TableRow} from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { TraceMetadata } from '../types';
-import React, { useContext } from 'react';
-import { SpanIconButton } from '../SpanIconButton';
-import { BigNumber, ethers } from 'ethers';
-import { NATIVE_TOKEN } from '../decoder/actions';
-import { formatUsd } from '../helpers';
-import { DataRenderer } from '../DataRenderer';
-import { ChainConfigContext } from '../Chains';
-import { getPriceOfToken, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
-import { TokenMetadata, TokenMetadataContext } from '../metadata/tokens';
-import { TraceEntryCall, TraceEntryLog } from '../api';
+import {TraceMetadata} from '../types';
+import React, {useContext} from 'react';
+import {SpanIconButton} from '../SpanIconButton';
+import {BigNumber, ethers} from 'ethers';
+import {NATIVE_TOKEN} from '../decoder/actions';
+import {formatUsd} from '../helpers';
+import {DataRenderer} from '../DataRenderer';
+import {ChainConfigContext} from '../Chains';
+import {fetchDefiLlamaPrices, getPriceOfToken, PriceMetadataContext, toDefiLlamaId} from '../metadata/prices';
+import {fetchTokenMetadata, TokenMetadata, TokenMetadataContext} from '../metadata/tokens';
+import {TraceEntryCall, TraceEntryLog, TraceResponse} from '../api';
+import {BaseProvider} from "@ethersproject/providers";
+import {TransactionMetadataContext} from "../metadata/transaction";
 
 export type ValueChangeProps = {
-    traceResult: TraceResult;
+    traceResult: TraceResponse;
     traceMetadata: TraceMetadata;
-
-    requestMetadata: (tokens: Array<string>) => void;
+    provider: BaseProvider;
 };
 
 type RowProps = {
@@ -26,7 +27,7 @@ type RowProps = {
 };
 
 function Row(props: RowProps) {
-    const { address, changes } = props;
+    const {address, changes} = props;
 
     const priceMetadata = useContext(PriceMetadataContext);
     const tokenMetadata = useContext(TokenMetadataContext);
@@ -51,7 +52,7 @@ function Row(props: RowProps) {
     const changeInPriceRendered = hasMissingPrice ? (
         <span>Loading...</span>
     ) : (
-        <span style={{ color: changeInValue < 0n ? '#ed335f' : changeInValue > 0n ? '#067034' : '' }}>
+        <span style={{color: changeInValue < 0n ? '#ed335f' : changeInValue > 0n ? '#067034' : ''}}>
             {formatUsd(changeInValue)}
         </span>
     );
@@ -65,7 +66,7 @@ function Row(props: RowProps) {
             if (token === NATIVE_TOKEN) {
                 tokenAddress = chainConfig.nativeTokenAddress || '';
                 priceId = chainConfig.coingeckoId || '';
-                labels = { [tokenAddress]: chainConfig.nativeSymbol || '' };
+                labels = {[tokenAddress]: chainConfig.nativeSymbol || ''};
             }
             tokenAddress = tokenAddress.toLowerCase();
 
@@ -83,7 +84,7 @@ function Row(props: RowProps) {
             return (
                 <TableRow key={token}>
                     <TableCell component="th" scope="row">
-                        {<DataRenderer preferredType={'address'} labels={labels} data={tokenAddress} />}
+                        {<DataRenderer preferredType={'address'} labels={labels} data={tokenAddress}/>}
                     </TableCell>
                     <TableCell>{amountFormatted}</TableCell>
                     <TableCell align="right">{tokenPriceRendered}</TableCell>
@@ -94,23 +95,23 @@ function Row(props: RowProps) {
     return (
         <React.Fragment>
             <TableRow>
-                <TableCell style={{ borderBottom: 'none' }}>
+                <TableCell style={{borderBottom: 'none'}}>
                     <SpanIconButton
                         icon={open ? KeyboardArrowUpIcon : KeyboardArrowDownIcon}
                         onClick={() => setOpen(!open)}
                     />
                 </TableCell>
-                <TableCell component="th" scope="row" style={{ borderBottom: 'none' }}>
-                    <DataRenderer preferredType={'address'} data={address} />
+                <TableCell component="th" scope="row" style={{borderBottom: 'none'}}>
+                    <DataRenderer preferredType={'address'} data={address}/>
                 </TableCell>
-                <TableCell align="right" style={{ borderBottom: 'none' }}>
+                <TableCell align="right" style={{borderBottom: 'none'}}>
                     {changeInPriceRendered}
                 </TableCell>
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                <TableCell style={{paddingBottom: 0, paddingTop: 0}} colSpan={6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ margin: 1 }}>
+                        <Box sx={{margin: 1}}>
                             <Table size="small" aria-label="purchases">
                                 <TableHead>
                                     <TableRow>
@@ -211,20 +212,32 @@ const computeBalanceChanges = (
 
 export const ValueChange = (props: ValueChangeProps) => {
     console.log('rendering value change');
-    const { traceResult, traceMetadata, requestMetadata } = props;
+    const {traceResult, traceMetadata, provider} = props;
     const tokenMetadata = useContext(TokenMetadataContext);
+    const chainConfig = useContext(ChainConfigContext);
+    const transactionMetadata = useContext(TransactionMetadataContext);
+    const priceMetadata = useContext(PriceMetadataContext);
 
     const [changes, allTokens] = React.useMemo(() => {
         return computeBalanceChanges(traceResult.entrypoint, traceMetadata, tokenMetadata);
     }, [traceResult, traceMetadata, tokenMetadata]);
 
-    requestMetadata(Array.from(allTokens));
+    fetchDefiLlamaPrices(
+        priceMetadata.updater,
+        Array.from(allTokens).map((token) => `${chainConfig.defillamaPrefix}:${token}`),
+        transactionMetadata.block.timestamp,
+    );
+    fetchTokenMetadata(
+        tokenMetadata.updater,
+        provider,
+        Array.from(allTokens),
+    );
 
     return Object.entries(changes).length > 0 ? (
-        <Table aria-label="collapsible table" size={'small'} sx={{ maxWidth: { md: '100vw', lg: '75vw', xl: '50vw' } }}>
+        <Table aria-label="collapsible table" size={'small'} sx={{maxWidth: {md: '100vw', lg: '75vw', xl: '50vw'}}}>
             <TableHead>
                 <TableRow>
-                    <TableCell />
+                    <TableCell/>
                     <TableCell>Address</TableCell>
                     <TableCell align="right">Change In Value</TableCell>
                 </TableRow>
@@ -233,7 +246,7 @@ export const ValueChange = (props: ValueChangeProps) => {
                 {Object.keys(changes)
                     .sort()
                     .map((row) => {
-                        return <Row key={row} address={row} changes={changes[row]} />;
+                        return <Row key={row} address={row} changes={changes[row]}/>;
                     })}
             </TableBody>
         </Table>

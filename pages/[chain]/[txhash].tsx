@@ -1,18 +1,17 @@
 import * as React from 'react';
-import { ThemeProvider, Typography } from '@mui/material';
-import { Result, TraceMetadata } from '../../components/types';
-import { theme } from '../../components/helpers';
-import { precompiles } from '../../components/precompiles';
-import { ethers } from 'ethers';
+import {ThemeProvider, Typography} from '@mui/material';
+import {Result, TraceMetadata} from '../../components/types';
+import {theme} from '../../components/helpers';
+import {precompiles} from '../../components/precompiles';
+import {ethers} from 'ethers';
 import styles from '../../styles/Home.module.css';
-import { useRouter } from 'next/router';
-import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
-import { TransactionInfo } from '../../components/transaction-info/TransactionInfo';
-import { decode, DecoderOutput } from '../../components/decoder/decoder';
-import { DecodeTree } from '../../components/decoder/DecodeTree';
-import { ChainConfig, ChainConfigContext, defaultChainConfig, getChain } from '../../components/Chains';
+import {useRouter} from 'next/router';
+import {BaseProvider, JsonRpcProvider} from '@ethersproject/providers';
+import {TransactionInfo} from '../../components/transaction-info/TransactionInfo';
+import {DecodeTree} from '../../components/decoder/DecodeTree';
+import {ChainConfig, ChainConfigContext, defaultChainConfig, getChain} from '../../components/Chains';
 import Home from '../index';
-import { ValueChange } from '../../components/value-change/ValueChange';
+import {ValueChange} from '../../components/value-change/ValueChange';
 import {
     defaultPriceMetadata,
     fetchDefiLlamaPrices,
@@ -25,16 +24,16 @@ import {
     TokenMetadata,
     TokenMetadataContext,
 } from '../../components/metadata/tokens';
-import { TraceTree } from '../../components/trace/TraceTree';
-import { defaultLabelMetadata, LabelMetadata, LabelMetadataContext } from '../../components/metadata/labels';
-import { TransactionMetadata, TransactionMetadataContext } from '../../components/metadata/transaction';
-import { doApiRequest, TraceEntry, TraceResponse } from '../../components/api';
+import {TraceTree} from '../../components/trace/TraceTree';
+import {defaultLabelMetadata, LabelMetadata, LabelMetadataContext} from '../../components/metadata/labels';
+import {TransactionMetadata, TransactionMetadataContext} from '../../components/metadata/transaction';
+import {doApiRequest, TraceEntry, TraceResponse} from '../../components/api';
 
 export default function TransactionViewer() {
     console.log('rendering main view');
 
     const router = useRouter();
-    const { chain, txhash } = router.query;
+    const {chain, txhash} = router.query;
 
     const [chainConfig, setChainConfig] = React.useState<ChainConfig>(defaultChainConfig());
     const [provider, setProvider] = React.useState<BaseProvider>();
@@ -70,12 +69,13 @@ export default function TransactionViewer() {
             ...defaultPriceMetadata(),
             updater: setPriceMetadata,
         });
+        setTraceResult(undefined);
         setTransactionMetadata(undefined);
 
         Promise.all([provider.getTransaction(txhash), provider.getTransactionReceipt(txhash)])
             .then(([transaction, receipt]) => {
                 provider.getBlock(receipt.blockHash).then((block) => {
-                    console.log('loaded transaction metadata');
+                    console.log('loaded transaction metadata', transaction, receipt, block);
                     setTransactionMetadata({
                         ok: true,
                         result: {
@@ -99,14 +99,15 @@ export default function TransactionViewer() {
             });
 
         doApiRequest<TraceResponse>(`/api/v1/trace/${chain}/${txhash}`)
-            .then((resp) => {
-                console.log('loaded trace result', resp);
+            .then((traceResponse) => {
+                console.log('loaded trace', traceResponse);
 
                 let labels: Record<string, string> = {};
                 let customLabels: Record<string, Record<string, string>> = {};
                 try {
                     customLabels = JSON.parse(localStorage.getItem('pref:labels') || '{}');
-                } catch {}
+                } catch {
+                }
                 if (!(chain in customLabels)) {
                     customLabels[chain] = {};
                 }
@@ -127,9 +128,9 @@ export default function TransactionViewer() {
                         node.children.forEach(preprocess);
                     }
                 };
-                preprocess(resp.entrypoint);
+                preprocess(traceResponse.entrypoint);
 
-                for (let [address, entries] of Object.entries(resp.addresses)) {
+                for (let [address, entries] of Object.entries(traceResponse.addresses)) {
                     metadata.abis[address] = {};
                     for (let [codehash, info] of Object.entries(entries)) {
                         labels[address] = labels[address] || info.label;
@@ -166,7 +167,7 @@ export default function TransactionViewer() {
                 Object.keys(labels).forEach((addr) => delete customLabels[chain][addr]);
                 localStorage.setItem('pref:labels', JSON.stringify(customLabels));
 
-                setTraceResult(resp);
+                setTraceResult(traceResponse);
                 setTraceMetadata(metadata);
                 setLabelMetadata({
                     updater: setLabelMetadata,
@@ -175,7 +176,7 @@ export default function TransactionViewer() {
                 });
                 setTraceResponse({
                     ok: true,
-                    result: resp,
+                    result: traceResponse,
                 });
             })
             .catch((e) => {
@@ -195,7 +196,7 @@ export default function TransactionViewer() {
                     <ChainConfigContext.Provider value={chainConfig}>
                         <LabelMetadataContext.Provider value={labelMetadata}>
                             <PriceMetadataContext.Provider value={priceMetadata}>
-                                <TransactionInfo />
+                                <TransactionInfo/>
                             </PriceMetadataContext.Provider>
                         </LabelMetadataContext.Provider>
                     </ChainConfigContext.Provider>
@@ -207,7 +208,7 @@ export default function TransactionViewer() {
     }
 
     let valueChanges;
-    if (transactionMetadata && traceResult && traceMetadata) {
+    if (transactionMetadata && traceResult && traceMetadata && provider) {
         if (transactionMetadata.ok) {
             valueChanges = (
                 <TransactionMetadataContext.Provider value={transactionMetadata.result}>
@@ -218,14 +219,7 @@ export default function TransactionViewer() {
                                     <ValueChange
                                         traceResult={traceResult}
                                         traceMetadata={traceMetadata}
-                                        requestMetadata={(tokens) => {
-                                            fetchDefiLlamaPrices(
-                                                setPriceMetadata,
-                                                tokens.map((token) => `${chainConfig.defillamaPrefix}:${token}`),
-                                                transactionMetadata.result.block.timestamp,
-                                            );
-                                            fetchTokenMetadata(setTokenMetadata, provider, tokens);
-                                        }}
+                                        provider={provider}
                                     />
                                 </TokenMetadataContext.Provider>
                             </PriceMetadataContext.Provider>
@@ -239,7 +233,7 @@ export default function TransactionViewer() {
     }
 
     let transactionActions;
-    if (transactionMetadata && traceResult && traceMetadata) {
+    if (transactionMetadata && traceResult && traceMetadata && provider) {
         if (transactionMetadata.ok) {
             transactionActions = (
                 <TransactionMetadataContext.Provider value={transactionMetadata.result}>
@@ -268,7 +262,7 @@ export default function TransactionViewer() {
         traceTree = (
             <ChainConfigContext.Provider value={chainConfig}>
                 <LabelMetadataContext.Provider value={labelMetadata}>
-                    <TraceTree traceResult={traceResult} traceMetadata={traceMetadata} />
+                    <TraceTree traceResult={traceResult} traceMetadata={traceMetadata}/>
                 </LabelMetadataContext.Provider>
             </ChainConfigContext.Provider>
         );
@@ -277,7 +271,7 @@ export default function TransactionViewer() {
     return (
         <ThemeProvider theme={theme}>
             <div className={styles.container}>
-                <Home />
+                <Home/>
 
                 <Typography variant={'h6'} className="dark:invert">
                     Transaction Info
