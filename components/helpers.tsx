@@ -114,32 +114,33 @@ export const BuiltinErrors: Record<
 
 export const TreeItemContentSpan = (props: TreeItemContentProps) => {
     return (
-        <span
-            tabIndex={0}
-            onFocus={(event) => {
-                // we don't want the tree to focus onto the root element when a user is trying
-                // to select text
-                //
-                // this has the side effect of preventing users from using arrow keys to navigate
-                // see: https://github.com/mui/material-ui/issues/29518
+        <span style={{ display: 'flex' }}>
+            <span
+                tabIndex={0}
+                onFocus={(event) => {
+                    // we don't want the tree to focus onto the root element when a user is trying
+                    // to select text
+                    //
+                    // this has the side effect of preventing users from using arrow keys to navigate
+                    // see: https://github.com/mui/material-ui/issues/29518
 
-                event.stopPropagation();
-            }}
-            onClick={(event) => {
-                // we don't want the tree item to expand when the user clicks on the context
-                //
-                // this has the side effect of disabling the ability to select the treeitem itself
-                // but by now our tree is so fucked that it's fine
-                event.stopPropagation();
-            }}
-            style={{
-                display: 'flex',
-                whiteSpace: 'nowrap',
-                fontFamily: 'monospace',
-                letterSpacing: 'initial',
-            }}
-        >
-            {props.children}
+                    event.stopPropagation();
+                }}
+                onClick={(event) => {
+                    // we don't want the tree item to expand when the user clicks on the context
+                    //
+                    // this has the side effect of disabling the ability to select the treeitem itself
+                    // but by now our tree is so fucked that it's fine
+                    event.stopPropagation();
+                }}
+                style={{
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'monospace',
+                    letterSpacing: 'initial',
+                }}
+            >
+                {props.children}
+            </span>
         </span>
     );
 };

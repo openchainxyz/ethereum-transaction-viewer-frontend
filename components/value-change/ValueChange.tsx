@@ -38,7 +38,7 @@ function Row(props: RowProps) {
     let hasMissingPrice = false;
     let changeInValue = 0n;
     Object.entries(changes).forEach(([token, delta]) => {
-        const defiLlamaId = toDefiLlamaId(chainConfig.id, token);
+        const defiLlamaId = toDefiLlamaId(chainConfig, token);
 
         const deltaPrice = getPriceOfToken(priceMetadata, defiLlamaId, delta, 'historical');
         if (deltaPrice === null) {
@@ -62,7 +62,7 @@ function Row(props: RowProps) {
         .map((token) => {
             let labels;
             let tokenAddress = token;
-            let priceId = toDefiLlamaId(chainConfig.id, token);
+            let priceId = toDefiLlamaId(chainConfig, token);
             if (token === NATIVE_TOKEN) {
                 tokenAddress = chainConfig.nativeTokenAddress || '';
                 priceId = chainConfig.coingeckoId || '';

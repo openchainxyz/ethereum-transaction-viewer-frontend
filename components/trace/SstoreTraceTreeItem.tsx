@@ -147,7 +147,6 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                             <span
                                 key={i}
                                 style={{
-                                    display: 'flex',
                                     color: '#a8a19f',
                                 }}
                             >
@@ -157,10 +156,10 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
                         );
                     } else {
                         return (
-                            <span key={i} style={{ display: 'flex' }}>
+                            <React.Fragment key={i}>
                                 {v.name}:&nbsp;{oldDataRenderer}&nbsp;→&nbsp;
                                 {newDataRenderer}
-                            </span>
+                            </React.Fragment>
                         );
                     }
                 })}

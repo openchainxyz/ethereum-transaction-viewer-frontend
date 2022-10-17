@@ -453,7 +453,7 @@ export const TraceTree = (props: TraceTreeProps) => {
 
     const treeItems = React.useMemo(() => {
         return recursivelyGenerateTree(traceResult.entrypoint);
-    }, [showStorageChanges, traceResult]);
+    }, [showStorageChanges, traceResult, storageMetadata]);
     const l = (
         <>
             <TreeView

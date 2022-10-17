@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { getChain } from '../Chains';
+import { ChainConfig, getChain } from '../Chains';
 import { NATIVE_TOKEN } from '../decoder/actions';
 
 type CoinInfo = {
@@ -36,13 +36,12 @@ export const defaultPriceMetadata = (): PriceMetadata => {
 
 export const PriceMetadataContext = React.createContext(defaultPriceMetadata());
 
-export const toDefiLlamaId = (chain: string, token: string) => {
-    const chainInfo = getChain(chain);
-    if (chainInfo && (token === chainInfo.nativeTokenAddress || token == NATIVE_TOKEN)) {
+export const toDefiLlamaId = (chainInfo: ChainConfig, token: string) => {
+    if (token === chainInfo.nativeTokenAddress || token == NATIVE_TOKEN) {
         return chainInfo.coingeckoId;
     }
 
-    return `${chain}:${token}`;
+    return `${chainInfo.defillamaPrefix}:${token}`;
 };
 
 export const getPriceOfToken = (
