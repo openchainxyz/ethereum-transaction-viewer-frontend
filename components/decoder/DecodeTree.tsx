@@ -1,25 +1,43 @@
-import { format } from './decoder';
+import { decode, format } from './decoder';
 import TreeView from '@mui/lab/TreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import * as React from 'react';
-import { TraceTreeItem } from '../TraceTreeItem';
-import {DecoderOutput, getNodeId} from './types';
-import {PriceMetadata, PriceMetadataContext} from '../metadata/prices';
-import {TokenMetadata, TokenMetadataContext} from '../metadata/tokens';
-import {LabelMetadataContext} from "../metadata/labels";
-import {useContext} from "react";
+import { TraceTreeItem } from '../trace/TraceTreeItem';
+import { DecoderOutput, getNodeId } from './types';
+import { fetchDefiLlamaPrices, PriceMetadata, PriceMetadataContext } from '../metadata/prices';
+import { fetchTokenMetadata, TokenMetadata, TokenMetadataContext } from '../metadata/tokens';
+import { LabelMetadataContext } from '../metadata/labels';
+import { useContext } from 'react';
+import { TraceResponse } from '../api';
+import { TraceMetadata } from '../types';
+import { ChainConfigContext } from '../Chains';
+import { TransactionMetadataContext } from '../metadata/transaction';
+import { BaseProvider } from '@ethersproject/providers';
 
 export type DecodeTreeProps = {
-    decoded: DecoderOutput;
-    chain: string;
-    timestamp: number;
+    provider: BaseProvider;
+    traceResult: TraceResponse;
+    traceMetadata: TraceMetadata;
 };
 
 export const DecodeTree = (props: DecodeTreeProps) => {
     const priceMetadata = useContext(PriceMetadataContext);
     const tokenMetadata = useContext(TokenMetadataContext);
-    const labelMetadata = useContext(LabelMetadataContext);
+    const transactionMetadata = useContext(TransactionMetadataContext);
+    const chainConfig = useContext(ChainConfigContext);
+
+    const [decodedActions, requestedMetadata] = React.useMemo(() => {
+        return decode(props.traceResult, props.traceMetadata);
+    }, [props.traceResult, props.traceMetadata]);
+
+    fetchDefiLlamaPrices(
+        priceMetadata.updater,
+        Array.from(requestedMetadata.tokens).map((token) => `${chainConfig.defillamaPrefix}:${token}`),
+        transactionMetadata.block.timestamp,
+    );
+
+    fetchTokenMetadata(tokenMetadata.updater, props.provider, Array.from(requestedMetadata.tokens));
 
     const recursivelyGenerateTree = (node: DecoderOutput): JSX.Element[] => {
         let results: JSX.Element[] = [];
@@ -39,8 +57,8 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                     key={id}
                     nodeId={id}
                     treeContent={format(v, {
-                        timestamp: props.timestamp,
-                        chain: props.chain,
+                        timestamp: transactionMetadata.block.timestamp,
+                        chain: chainConfig.id,
                         prices: priceMetadata,
                         tokens: tokenMetadata,
                     })}
@@ -53,7 +71,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
 
     let children;
     try {
-        children = recursivelyGenerateTree(props.decoded);
+        children = recursivelyGenerateTree(decodedActions);
     } catch (e) {
         console.log('failed to generate decoded tree!', e);
     }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import TreeItem from '@mui/lab/TreeItem';
-import { TreeItemContentSpan } from './helpers';
+import { TreeItemContentSpan } from '../helpers';
 import { Property } from 'csstype';
 import Color = Property.Color;
 

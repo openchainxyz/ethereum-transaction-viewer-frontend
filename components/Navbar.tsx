@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { SupportedChains } from './Chains';
 import { DarkMode, GitHub, LightMode, Twitter } from '@mui/icons-material';
+import { useContext } from 'react';
+import { SearchMetadataContext } from './metadata/search';
 
 function Navbar() {
     const router = useRouter();
@@ -26,23 +28,20 @@ function Navbar() {
     }, [queryChain, queryTxhash]);
 
     //Dark Mode Logic
-    const initialDarkValue = false;
-    const [darkMode, setDarkMode] = React.useState(initialDarkValue);
     const prefDarkKey = 'pref:dark';
-
-    React.useEffect(() => {
-        const darkItem = window.localStorage.getItem(prefDarkKey);
-        let darkValue = initialDarkValue;
-        if (darkItem) {
-            try {
-                darkValue = JSON.parse(darkItem);
-            } catch (e) {
-                // ignore
+    const initialDarkValue = (() => {
+        if (typeof window !== 'undefined') {
+            const darkItem = window.localStorage.getItem(prefDarkKey);
+            if (darkItem) {
+                try {
+                    return !!JSON.parse(darkItem);
+                } catch {
+                }
             }
         }
-        setDarkMode(darkValue);
-    }, [initialDarkValue]);
-
+        return false;
+    })();
+    const [darkMode, setDarkMode] = React.useState(initialDarkValue);
     React.useEffect(() => {
         window.localStorage.setItem(prefDarkKey, JSON.stringify(darkMode));
     }, [darkMode]);

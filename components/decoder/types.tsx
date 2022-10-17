@@ -1,17 +1,17 @@
-import {BigNumber, BigNumberish, BytesLike, ethers} from 'ethers';
-import {DataRenderer} from '../DataRenderer';
+import { BigNumber, BigNumberish, BytesLike, ethers } from 'ethers';
+import { DataRenderer } from '../DataRenderer';
 import * as React from 'react';
-import {Tooltip} from '@mui/material';
-import {formatUsd} from '../helpers';
-import {getChain} from '../Chains';
-import {ParamType} from 'ethers/lib/utils';
+import { Tooltip } from '@mui/material';
+import { formatUsd } from '../helpers';
+import { getChain } from '../Chains';
+import { ParamType } from 'ethers/lib/utils';
 import WithSeparator from 'react-with-separator';
-import {TraceTreeNodeLabel} from '../TraceTreeItem';
-import {defaultAbiCoder, EventFragment, FunctionFragment, Result} from '@ethersproject/abi/lib';
-import {Log} from '@ethersproject/abstract-provider';
-import {NATIVE_TOKEN} from './actions';
-import {PriceMetadata} from '../metadata/prices';
-import {TokenMetadata} from '../metadata/tokens';
+import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
+import { defaultAbiCoder, EventFragment, FunctionFragment, Result } from '@ethersproject/abi/lib';
+import { Log } from '@ethersproject/abstract-provider';
+import { NATIVE_TOKEN } from './actions';
+import { PriceMetadata } from '../metadata/prices';
+import { TokenMetadata } from '../metadata/tokens';
 
 export const hasSelector = (calldata: BytesLike, selector: string | FunctionFragment) => {
     return (
@@ -66,7 +66,7 @@ export type MetadataRequest = {
 
 export const isDecoderInput = (node: DecoderInput | Log): node is DecoderInput => {
     return (node as DecoderInput).id !== undefined;
-}
+};
 
 export const getNodeId = (node: DecoderInput | Log) => {
     if (isDecoderInput(node)) {
@@ -74,7 +74,7 @@ export const getNodeId = (node: DecoderInput | Log) => {
     } else {
         return 'log:' + node.transactionHash + '.' + node.logIndex;
     }
-}
+};
 
 export class DecoderState {
     consumed: Set<string>;
@@ -167,8 +167,7 @@ export class DecoderState {
                         if (values.args[0] === from && values.args[1] === to) {
                             this.consume(v);
                         }
-                    } catch {
-                    }
+                    } catch {}
                 });
 
             // if we have a delegatecall, we need to recurse because it will emit the log in the context of the
@@ -212,7 +211,7 @@ export abstract class Decoder<T extends BaseAction> {
         ];
     }
 
-    formatAddress(addr: string) : JSX.Element {
+    formatAddress(addr: string): JSX.Element {
         return <DataRenderer preferredType={'address'} data={addr} />;
     }
 
@@ -223,7 +222,7 @@ export abstract class Decoder<T extends BaseAction> {
         }
 
         let amountFormatted = amount.toString();
-        let address = <DataRenderer chain={opts.chain} preferredType={'address'} data={token}/>;
+        let address = <DataRenderer chain={opts.chain} preferredType={'address'} data={token} />;
         let price;
 
         let tokenInfo = opts.tokens.tokens[token];
@@ -235,7 +234,7 @@ export abstract class Decoder<T extends BaseAction> {
                 address = (
                     <DataRenderer
                         chain={opts.chain}
-                        labels={{[token]: tokenInfo.symbol}}
+                        labels={{ [token]: tokenInfo.symbol }}
                         preferredType={'address'}
                         data={token}
                     />
@@ -261,7 +260,7 @@ export abstract class Decoder<T extends BaseAction> {
 
         return (
             <>
-                {amountFormatted}&nbsp;<span style={{color: '#7b9726'}}>{address}</span>
+                {amountFormatted}&nbsp;<span style={{ color: '#7b9726' }}>{address}</span>
                 {price}
             </>
         );
@@ -270,13 +269,13 @@ export abstract class Decoder<T extends BaseAction> {
     renderResult(nodeType: string, nodeColor: string, keys: string[], values: any[]) {
         return (
             <>
-                <TraceTreeNodeLabel nodeType={nodeType} nodeColor={nodeColor}/>
+                <TraceTreeNodeLabel nodeType={nodeType} nodeColor={nodeColor} />
                 &nbsp;
                 <WithSeparator separator={<>,&nbsp;</>}>
                     {keys.map((key, idx) => {
                         return (
                             <React.Fragment key={`param_${idx}`}>
-                                <span style={{color: '#a8a19f'}}>{key}</span>={values[idx]}
+                                <span style={{ color: '#a8a19f' }}>{key}</span>={values[idx]}
                             </React.Fragment>
                         );
                     })}

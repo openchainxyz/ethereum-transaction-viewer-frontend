@@ -1,12 +1,12 @@
-import {ParamType} from '@ethersproject/abi/lib';
-import {BigNumber, ethers} from 'ethers';
+import { ParamType } from '@ethersproject/abi/lib';
+import { BigNumber, ethers } from 'ethers';
 import * as React from 'react';
-import {useContext} from 'react';
-import {SpanIconButton} from './SpanIconButton';
+import { useContext } from 'react';
+import { SpanIconButton } from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import {getChain} from './Chains';
-import {LabelMetadataContext} from "./metadata/labels";
-import {Button, IconButton, Tooltip} from "@mui/material";
+import { ChainConfig, ChainConfigContext, getChain } from './Chains';
+import { LabelMetadataContext } from './metadata/labels';
+import { Button, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
@@ -23,7 +23,7 @@ const stringifyValue = (paramType: ParamType, value: any): string => {
 
 let formatValueWithParamType = (
     paramType: ParamType,
-    chain: string,
+    chainConfig: ChainConfig,
     value: string,
     truncate: boolean,
     makeLink: boolean,
@@ -39,7 +39,7 @@ let formatValueWithParamType = (
         if (makeLink) {
             return (
                 <a
-                    href={`${getChain(chain)?.blockexplorerUrl}/address/${address}`}
+                    href={`${chainConfig.blockexplorerUrl}/address/${address}`}
                     target={'_blank'}
                     rel={'noopener noreferrer'}
                 >
@@ -59,8 +59,7 @@ let formatValueWithParamType = (
 };
 
 type DataRendererProps = {
-    chain?: string;
-    labels?: Record<string, string>,
+    labels?: Record<string, string>;
     data?: string;
     decodedData?: any;
     showCopy?: boolean;
@@ -70,11 +69,11 @@ type DataRendererProps = {
 };
 
 export const DataRenderer = (props: DataRendererProps) => {
+    const chainConfig = useContext(ChainConfigContext);
     const labelMetadata = useContext(LabelMetadataContext);
 
     const abiCoder = ethers.utils.defaultAbiCoder;
 
-    let chain = props.chain || 'ethereum';
     let preferredType = props.preferredType || 'bytes32';
     let decodedData = props.decodedData;
     let data = props.data;
@@ -139,7 +138,7 @@ export const DataRenderer = (props: DataRendererProps) => {
 
         let rendered = formatValueWithParamType(
             paramType,
-            chain,
+            chainConfig,
             stringified,
             truncate || false,
             makeLink,
@@ -148,36 +147,52 @@ export const DataRenderer = (props: DataRendererProps) => {
 
         if (paramType.baseType === 'address') {
             rendered = (
-                <Tooltip arrow placement={"top"} title={
-                    <span style={{cursor: 'pointer'}} onClick={() => {
-                        const address = stringified.toLowerCase();
+                <Tooltip
+                    arrow
+                    placement={'top'}
+                    title={
+                        <span
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                                const address = stringified.toLowerCase();
 
-                        let newLabel = prompt("Enter a new label", (props.labels || labelMetadata.labels)[address] || address);
-                        if (newLabel !== null && newLabel !== address) {
-                            labelMetadata.updater(prevState => {
-                                const newState = {...prevState};
+                                let newLabel = prompt(
+                                    'Enter a new label',
+                                    (props.labels || labelMetadata.labels)[address] || address,
+                                );
+                                if (newLabel !== null && newLabel !== address) {
+                                    labelMetadata.updater((prevState) => {
+                                        const newState = { ...prevState };
 
-                                if (!(chain in newState.customLabels)) {
-                                    newState.customLabels[chain] = {};
+                                        if (!(chainConfig.id in newState.customLabels)) {
+                                            newState.customLabels[chainConfig.id] = {};
+                                        }
+                                        newState.labels[address] = newLabel || newState.labels[address];
+                                        newState.customLabels[chainConfig.id][address] = newLabel || '';
+                                        localStorage.setItem('pref:labels', JSON.stringify(newState.customLabels));
+
+                                        if (chainConfig.id === 'ethereum') {
+                                            fetch(`https://tags.eth.samczsun.com/api/v1/address/${address}`, {
+                                                method: 'POST',
+                                                body: JSON.stringify({
+                                                    label: newLabel,
+                                                }),
+                                            })
+                                                .then(console.log)
+                                                .catch(console.log);
+                                        }
+
+                                        return newState;
+                                    });
                                 }
-                                newState.labels[address] = newLabel || newState.labels[address];
-                                newState.customLabels[chain][address] = newLabel || '';
-                                localStorage.setItem("pref:labels", JSON.stringify(newState.customLabels));
-
-                                if (chain === 'ethereum') {
-                                    fetch(`https://tags.eth.samczsun.com/api/v1/address/${address}`, {
-                                        method: 'POST',
-                                        body: JSON.stringify({
-                                            label: newLabel,
-                                        }),
-                                    }).then(console.log).catch(console.log);
-                                }
-
-                                return newState;
-                            })
-                        }
-                    }}>[Edit Label]</span>
-                }>{rendered}</Tooltip>
+                            }}
+                        >
+                            [Edit Label]
+                        </span>
+                    }
+                >
+                    {rendered}
+                </Tooltip>
             );
         }
 

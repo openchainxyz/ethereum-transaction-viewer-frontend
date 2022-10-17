@@ -1,3 +1,5 @@
+import React from 'react';
+
 export type ChainConfig = {
     id: string;
     displayName: string;
@@ -85,3 +87,9 @@ export const SupportedChains = [
 export const getChain = (id: string): ChainConfig | undefined => {
     return SupportedChains.find((chain) => chain.id === id);
 };
+
+export const defaultChainConfig = (): ChainConfig => {
+    return SupportedChains[0];
+};
+
+export const ChainConfigContext = React.createContext(defaultChainConfig());

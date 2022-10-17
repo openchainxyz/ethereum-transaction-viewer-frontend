@@ -1,18 +1,19 @@
-import { TraceEntryCallable, TraceEntryLog, TraceMetadata, TraceResult } from '../types';
+import { TraceEntryCallable, TraceMetadata } from '../types';
 import * as React from 'react';
 import { ParamType } from '@ethersproject/abi';
 import { ParamFlatView } from '../ParamFlatView';
 import { DataRenderer } from '../DataRenderer';
 import { Grid, List, ListItem } from '@mui/material';
 import { ParamTreeView } from '../ParamTreeView';
-import { TraceTreeItem, TraceTreeNodeLabel } from '../TraceTreeItem';
-import { TraceTreeDialog } from '../TraceTreeDialog';
+import { TraceTreeItem, TraceTreeNodeLabel } from './TraceTreeItem';
+import { TraceTreeDialog } from './TraceTreeDialog';
 import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
 import { useEventFragment } from '../hooks/useFragment';
+import { TraceEntryLog, TraceResponse } from '../api';
 
 type LogTraceTreeItemProps = {
-    traceResult: TraceResult;
+    traceResult: TraceResponse;
     traceMetadata: TraceMetadata;
     node: TraceEntryLog;
     onClick?: () => void;
@@ -100,15 +101,8 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
 
     dialogTitle = (
         <>
-            {
-                <DataRenderer
-                    chain={props.traceMetadata.chain}
-                    data={parentNode.to}
-                    preferredType={'address'}
-                    makeLink={false}
-                />
-            }
-            .<span style={{ color: '#7b9726' }}>{eventName}</span>
+            {<DataRenderer data={parentNode.to} preferredType={'address'} makeLink={false} />}.
+            <span style={{ color: '#7b9726' }}>{eventName}</span>
         </>
     );
     dialogContent = (
@@ -171,12 +165,7 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
             &nbsp;
             {props.showAddress ? (
                 <>
-                    <DataRenderer
-                        chain={props.traceMetadata.chain}
-                        preferredType={'address'}
-                        data={parentNode.to}
-                    />
-                    .
+                    <DataRenderer preferredType={'address'} data={parentNode.to} />.
                 </>
             ) : null}
             {eventName}({eventParams})

@@ -1,13 +1,4 @@
-import {
-    StorageMetadata,
-    TraceEntryCall,
-    TraceEntryCallable,
-    TraceEntryLog,
-    TraceEntrySload,
-    TraceEntrySstore,
-    TraceMetadata,
-    TraceResult,
-} from '../types';
+import { StorageMetadata, TraceEntryCallable, TraceMetadata } from '../types';
 import * as React from 'react';
 import { defaultAbiCoder, ParamType, Result } from '@ethersproject/abi';
 import { precompiles } from '../precompiles';
@@ -19,8 +10,8 @@ import { Grid, Typography } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { formatEther } from 'ethers/lib/utils';
-import { TraceTreeItem, TraceTreeNodeLabel } from '../TraceTreeItem';
-import { TraceTreeDialog } from '../TraceTreeDialog';
+import { TraceTreeItem, TraceTreeNodeLabel } from './TraceTreeItem';
+import { TraceTreeDialog } from './TraceTreeDialog';
 import { BuiltinErrors, findAffectedContract } from '../helpers';
 import { LogTraceTreeItem } from './LogTraceTreeItem';
 import { SpanIconButton } from '../SpanIconButton';
@@ -28,6 +19,7 @@ import { useErrorFragment, useFunctionFragment } from '../hooks/useFragment';
 import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
 import { getChain } from '../Chains';
+import { TraceEntryCall, TraceEntryLog, TraceEntrySload, TraceEntrySstore, TraceResponse } from '../api';
 
 const callColor = {
     call: '#2c2421',
@@ -37,7 +29,7 @@ const callColor = {
 };
 
 type CallTraceTreeItemProps = {
-    traceResult: TraceResult;
+    traceResult: TraceResponse;
     traceMetadata: TraceMetadata;
     storageMetadata: StorageMetadata;
     requestStorageMetadata: (chain: string, affectedCall: TraceEntryCallable, actualCall: TraceEntryCallable) => void;
@@ -213,13 +205,8 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
 
     dialogTitle = (
         <>
-            <DataRenderer
-                chain={props.traceMetadata.chain}
-                data={node.to}
-                preferredType={'address'}
-                makeLink={false}
-            />
-            .<span style={{ color: '#7b9726' }}>{functionName}</span>
+            <DataRenderer data={node.to} preferredType={'address'} makeLink={false} />.
+            <span style={{ color: '#7b9726' }}>{functionName}</span>
         </>
     );
     dialogContent = (
@@ -317,14 +304,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     }
 
     let address;
-    let addressContent = (
-        <DataRenderer
-            chain={props.traceMetadata.chain}
-            data={node.to}
-            preferredType={'address'}
-            makeLink={!node.isPrecompile}
-        />
-    );
+    let addressContent = <DataRenderer data={node.to} preferredType={'address'} makeLink={!node.isPrecompile} />;
     if (node.status === 0) {
         address = <s>{addressContent}</s>;
     } else {

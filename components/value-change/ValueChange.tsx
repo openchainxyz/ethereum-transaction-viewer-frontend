@@ -1,17 +1,17 @@
-import {Box, Collapse, Table, TableBody, TableCell, TableHead, TableRow} from '@mui/material';
+import { Box, Collapse, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import {TraceEntryCall, TraceEntryLog, TraceMetadata, TraceResult} from '../types';
-import React, {useContext} from 'react';
-import {SpanIconButton} from '../SpanIconButton';
-import {BigNumber, ethers} from 'ethers';
-import {NATIVE_TOKEN} from '../decoder/actions';
-import {formatUsd} from '../helpers';
-import {DataRenderer} from '../DataRenderer';
-import {getChain} from '../Chains';
-import {getPriceOfToken, PriceMetadataContext, toDefiLlamaId} from '../metadata/prices';
-import {TokenMetadata, TokenMetadataContext} from '../metadata/tokens';
-import {LabelMetadataContext} from "../metadata/labels";
+import { TraceMetadata } from '../types';
+import React, { useContext } from 'react';
+import { SpanIconButton } from '../SpanIconButton';
+import { BigNumber, ethers } from 'ethers';
+import { NATIVE_TOKEN } from '../decoder/actions';
+import { formatUsd } from '../helpers';
+import { DataRenderer } from '../DataRenderer';
+import { ChainConfigContext } from '../Chains';
+import { getPriceOfToken, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
+import { TokenMetadata, TokenMetadataContext } from '../metadata/tokens';
+import { TraceEntryCall, TraceEntryLog } from '../api';
 
 export type ValueChangeProps = {
     traceResult: TraceResult;
@@ -23,21 +23,21 @@ export type ValueChangeProps = {
 type RowProps = {
     address: string;
     changes: Record<string, bigint>;
-    traceMetadata: TraceMetadata;
 };
 
 function Row(props: RowProps) {
-    const {address, changes, traceMetadata} = props;
+    const { address, changes } = props;
 
     const priceMetadata = useContext(PriceMetadataContext);
     const tokenMetadata = useContext(TokenMetadataContext);
+    const chainConfig = useContext(ChainConfigContext);
 
     const [open, setOpen] = React.useState(false);
 
     let hasMissingPrice = false;
     let changeInValue = 0n;
     Object.entries(changes).forEach(([token, delta]) => {
-        const defiLlamaId = toDefiLlamaId(traceMetadata.chain, token);
+        const defiLlamaId = toDefiLlamaId(chainConfig.id, token);
 
         const deltaPrice = getPriceOfToken(priceMetadata, defiLlamaId, delta, 'historical');
         if (deltaPrice === null) {
@@ -51,7 +51,7 @@ function Row(props: RowProps) {
     const changeInPriceRendered = hasMissingPrice ? (
         <span>Loading...</span>
     ) : (
-        <span style={{color: changeInValue < 0n ? '#ed335f' : changeInValue > 0n ? '#067034' : ''}}>
+        <span style={{ color: changeInValue < 0n ? '#ed335f' : changeInValue > 0n ? '#067034' : '' }}>
             {formatUsd(changeInValue)}
         </span>
     );
@@ -61,17 +61,16 @@ function Row(props: RowProps) {
         .map((token) => {
             let labels;
             let tokenAddress = token;
-            let priceId = toDefiLlamaId(traceMetadata.chain, token);
+            let priceId = toDefiLlamaId(chainConfig.id, token);
             if (token === NATIVE_TOKEN) {
-                tokenAddress = getChain(traceMetadata.chain)?.nativeTokenAddress || '';
-                priceId = getChain(traceMetadata.chain)?.coingeckoId || '';
-                labels = {[tokenAddress]: getChain(traceMetadata.chain)?.nativeSymbol || ''};
+                tokenAddress = chainConfig.nativeTokenAddress || '';
+                priceId = chainConfig.coingeckoId || '';
+                labels = { [tokenAddress]: chainConfig.nativeSymbol || '' };
             }
             tokenAddress = tokenAddress.toLowerCase();
 
             let amountFormatted = changes[token].toString();
             let tokenPriceRendered = 'Loading...';
-
 
             let tokenInfo = tokenMetadata.tokens[tokenAddress];
             if (tokenInfo !== undefined && tokenInfo.decimals !== undefined) {
@@ -84,7 +83,7 @@ function Row(props: RowProps) {
             return (
                 <TableRow key={token}>
                     <TableCell component="th" scope="row">
-                        {<DataRenderer preferredType={'address'} labels={labels} data={tokenAddress}/>}
+                        {<DataRenderer preferredType={'address'} labels={labels} data={tokenAddress} />}
                     </TableCell>
                     <TableCell>{amountFormatted}</TableCell>
                     <TableCell align="right">{tokenPriceRendered}</TableCell>
@@ -95,21 +94,23 @@ function Row(props: RowProps) {
     return (
         <React.Fragment>
             <TableRow>
-                <TableCell style={{borderBottom: 'none'}}>
+                <TableCell style={{ borderBottom: 'none' }}>
                     <SpanIconButton
                         icon={open ? KeyboardArrowUpIcon : KeyboardArrowDownIcon}
                         onClick={() => setOpen(!open)}
                     />
                 </TableCell>
-                <TableCell component="th" scope="row" style={{borderBottom: 'none'}}>
-                    <DataRenderer preferredType={'address'} data={address}/>
+                <TableCell component="th" scope="row" style={{ borderBottom: 'none' }}>
+                    <DataRenderer preferredType={'address'} data={address} />
                 </TableCell>
-                <TableCell align="right" style={{borderBottom: 'none'}}>{changeInPriceRendered}</TableCell>
+                <TableCell align="right" style={{ borderBottom: 'none' }}>
+                    {changeInPriceRendered}
+                </TableCell>
             </TableRow>
             <TableRow>
-                <TableCell style={{paddingBottom: 0, paddingTop: 0}} colSpan={6}>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{margin: 1}}>
+                        <Box sx={{ margin: 1 }}>
                             <Table size="small" aria-label="purchases">
                                 <TableHead>
                                     <TableRow>
@@ -185,7 +186,7 @@ const computeBalanceChanges = (
                     addChange(parsedEvent.args[0] as string, parentNode.to, -value);
                     addChange(parsedEvent.args[1] as string, parentNode.to, value);
                 } catch (e) {
-                    console.error("failed to process value change", e);
+                    console.error('failed to process value change', e);
                 }
             });
 
@@ -209,7 +210,8 @@ const computeBalanceChanges = (
 };
 
 export const ValueChange = (props: ValueChangeProps) => {
-    const {traceResult, traceMetadata, requestMetadata} = props;
+    console.log('rendering value change');
+    const { traceResult, traceMetadata, requestMetadata } = props;
     const tokenMetadata = useContext(TokenMetadataContext);
 
     const [changes, allTokens] = React.useMemo(() => {
@@ -218,11 +220,11 @@ export const ValueChange = (props: ValueChangeProps) => {
 
     requestMetadata(Array.from(allTokens));
 
-    return Object.entries(changes).length > 0 ?
-        <Table aria-label="collapsible table" size={'small'} sx={{maxWidth: {md: '100vw', lg: '75vw', xl: '50vw'}}}>
+    return Object.entries(changes).length > 0 ? (
+        <Table aria-label="collapsible table" size={'small'} sx={{ maxWidth: { md: '100vw', lg: '75vw', xl: '50vw' } }}>
             <TableHead>
                 <TableRow>
-                    <TableCell/>
+                    <TableCell />
                     <TableCell>Address</TableCell>
                     <TableCell align="right">Change In Value</TableCell>
                 </TableRow>
@@ -231,8 +233,9 @@ export const ValueChange = (props: ValueChangeProps) => {
                 {Object.keys(changes)
                     .sort()
                     .map((row) => {
-                        return <Row key={row} traceMetadata={traceMetadata} address={row} changes={changes[row]}/>;
+                        return <Row key={row} address={row} changes={changes[row]} />;
                     })}
             </TableBody>
-        </Table> : null;
+        </Table>
+    ) : null;
 };

@@ -1,4 +1,4 @@
-import { TraceEntryCall, TraceEntryLog, TraceMetadata, TraceResult } from '../types';
+import { TraceMetadata } from '../types';
 import {
     BaseAction,
     DecodeFormatOpts,
@@ -14,7 +14,8 @@ import { BigNumber, ethers } from 'ethers';
 import { Log } from '@ethersproject/abstract-provider';
 import { Interface } from '@ethersproject/abi';
 import { findAffectedContract } from '../helpers';
-import {ENSDecoder} from "./ens";
+import { ENSDecoder } from './ens';
+import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
 
 const allDecoders: Record<string, Decoder<BaseAction>> = {};
 const decodeOrder: Decoder<BaseAction>[] = [];
@@ -32,7 +33,7 @@ registerDecoder(new ENSDecoder());
 // must come last!
 registerDecoder(new TransferDecoder());
 
-export const decode = (trace: TraceResult, metadata: TraceMetadata): [DecoderOutput, MetadataRequest] => {
+export const decode = (trace: TraceResponse, metadata: TraceMetadata): [DecoderOutput, MetadataRequest] => {
     let logIndex = 0;
     let indexToPath: Record<number, string> = {};
 

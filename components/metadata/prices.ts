@@ -1,32 +1,34 @@
 import * as React from 'react';
-import {getChain} from '../Chains';
-import {NATIVE_TOKEN} from "../decoder/actions";
+import { getChain } from '../Chains';
+import { NATIVE_TOKEN } from '../decoder/actions';
 
 type CoinInfo = {
-    confidence: number,
-    decimals: number,
-    price: number,
-    symbol: string,
-    timestamp: number,
-}
+    confidence: number;
+    decimals: number;
+    price: number;
+    symbol: string;
+    timestamp: number;
+};
 
 type DefiLlamaResponse = {
     coins: Record<string, CoinInfo>;
-}
+};
 
 export type PriceInfo = {
-    decimals: number,
-    currentPrice: bigint,
-    historicalPrice: bigint,
-}
+    decimals: number;
+    currentPrice: bigint;
+    historicalPrice: bigint;
+};
 
 export type PriceMetadata = {
+    updater: React.Dispatch<React.SetStateAction<PriceMetadata>>;
     status: Record<string, 'pending' | 'fetched'>;
     prices: Record<string, PriceInfo>;
 };
 
 export const defaultPriceMetadata = (): PriceMetadata => {
     return {
+        updater: () => {},
         status: {},
         prices: {},
     };
@@ -43,12 +45,21 @@ export const toDefiLlamaId = (chain: string, token: string) => {
     return `${chain}:${token}`;
 };
 
-export const getPriceOfToken = (metadata: PriceMetadata, id: string, amount: bigint, type: 'current' | 'historical'): bigint | null => {
+export const getPriceOfToken = (
+    metadata: PriceMetadata,
+    id: string,
+    amount: bigint,
+    type: 'current' | 'historical',
+): bigint | null => {
     if (metadata.status[id] !== 'fetched') return null;
 
     const priceInfo = metadata.prices[id];
-    return amount * BigInt(10 ** (18 - priceInfo.decimals)) * (type === 'current' ? priceInfo.currentPrice : priceInfo.historicalPrice);
-}
+    return (
+        amount *
+        BigInt(10 ** (18 - priceInfo.decimals)) *
+        (type === 'current' ? priceInfo.currentPrice : priceInfo.historicalPrice)
+    );
+};
 
 export const fetchDefiLlamaPrices = (
     setMetadata: React.Dispatch<React.SetStateAction<PriceMetadata>>,
@@ -58,7 +69,7 @@ export const fetchDefiLlamaPrices = (
     return new Promise<void>((resolve, reject) => {
         setTimeout(() => {
             setMetadata((prevState) => {
-                const newState = {...prevState};
+                const newState = { ...prevState };
 
                 const filteredIds = ids.filter((id) => newState.status[id] === undefined);
 
@@ -80,7 +91,7 @@ export const fetchDefiLlamaPrices = (
                         resolve();
 
                         setMetadata((prevState) => {
-                            let newState = {...prevState};
+                            let newState = { ...prevState };
                             filteredIds.forEach((id) => {
                                 newState.status[id] = 'fetched';
                                 newState.prices[id] = {

@@ -1,29 +1,18 @@
 import * as React from 'react';
-import {ThemeProvider, Typography} from '@mui/material';
-import {
-    SlotInfo,
-    StorageMetadata,
-    TraceEntry,
-    TraceEntrySload,
-    TraceEntrySstore,
-    TraceMetadata,
-    TraceResult,
-    TransactionInfoResponse,
-} from '../../components/types';
-import {apiEndpoint, findAffectedContract, theme} from '../../components/helpers';
-import {precompiles} from '../../components/precompiles';
-import {ethers} from 'ethers';
-import {knownSlots} from '../../components/knownSlots';
-import BN from 'bn.js';
+import { ThemeProvider, Typography } from '@mui/material';
+import { Result, TraceMetadata } from '../../components/types';
+import { theme } from '../../components/helpers';
+import { precompiles } from '../../components/precompiles';
+import { ethers } from 'ethers';
 import styles from '../../styles/Home.module.css';
-import {useRouter} from 'next/router';
-import {Formatter, JsonRpcBatchProvider, JsonRpcProvider} from '@ethersproject/providers';
-import {TransactionInfo} from '../../components/transactioninfo/TransactionInfo';
-import {decode, DecoderOutput} from '../../components/decoder/decoder';
-import {DecodeTree} from '../../components/decoder/DecodeTree';
-import {getChain} from '../../components/Chains';
+import { useRouter } from 'next/router';
+import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
+import { TransactionInfo } from '../../components/transaction-info/TransactionInfo';
+import { decode, DecoderOutput } from '../../components/decoder/decoder';
+import { DecodeTree } from '../../components/decoder/DecodeTree';
+import { ChainConfig, ChainConfigContext, defaultChainConfig, getChain } from '../../components/Chains';
 import Home from '../index';
-import {ValueChange} from '../../components/value-change/ValueChange';
+import { ValueChange } from '../../components/value-change/ValueChange';
 import {
     defaultPriceMetadata,
     fetchDefiLlamaPrices,
@@ -36,133 +25,109 @@ import {
     TokenMetadata,
     TokenMetadataContext,
 } from '../../components/metadata/tokens';
-import {TraceTree} from '../../components/trace/TraceTree';
-import {defaultLabelMetadata, LabelMetadata, LabelMetadataContext} from "../../components/metadata/labels";
-
-type APIResponseError = {
-    ok: false;
-    error: string;
-};
-
-type APIResponseSuccess<T> = {
-    ok: true;
-    result: T;
-};
-
-type APIResponse<T> = APIResponseError | APIResponseSuccess<T>;
-
-const doApiRequest = async <T, >(path: string, init?: RequestInit): Promise<T> => {
-    return fetch(`${apiEndpoint()}${path}`, init)
-        .then((res) => res.json())
-        .then((json) => json as APIResponse<T>)
-        .then((resp) => {
-            if (!resp.ok) {
-                throw new Error(resp.error);
-            }
-            return resp.result;
-        });
-};
-
-const defaultStorageMetadata = (): StorageMetadata => {
-    return {
-        fetched: {},
-        slots: {},
-    };
-};
+import { TraceTree } from '../../components/trace/TraceTree';
+import { defaultLabelMetadata, LabelMetadata, LabelMetadataContext } from '../../components/metadata/labels';
+import { TransactionMetadata, TransactionMetadataContext } from '../../components/metadata/transaction';
+import { doApiRequest, TraceEntry, TraceResponse } from '../../components/api';
 
 export default function TransactionViewer() {
+    console.log('rendering main view');
+
     const router = useRouter();
-    const {chain, txhash} = router.query;
+    const { chain, txhash } = router.query;
 
-    const [fetchTransactionError, setFetchTransactionError] = React.useState<Error | null>(null);
-    const [fetchTraceError, setFetchTraceError] = React.useState<Error | null>(null);
-    const [decodeTransactionError, setDecodeTransactionError] = React.useState<Error | null>(null);
+    const [chainConfig, setChainConfig] = React.useState<ChainConfig>(defaultChainConfig());
+    const [provider, setProvider] = React.useState<BaseProvider>();
 
-    const [transactionResponse, setTransactionResponse] = React.useState<TransactionInfoResponse | null>(null);
-    const [decodedActions, setDecodedActions] = React.useState<DecoderOutput | null>(null);
-    const [traceResult, setTraceResult] = React.useState(null as TraceResult | null);
-    const [traceMetadata, setTraceMetadata] = React.useState(null as TraceMetadata | null);
-    const [showStorageChanges, setShowStorageChanges] = React.useState<Set<string>>(new Set());
+    const [transactionMetadata, setTransactionMetadata] = React.useState<Result<TransactionMetadata>>();
+
+    const [traceResponse, setTraceResponse] = React.useState<Result<TraceResponse>>();
 
     const [labelMetadata, setLabelMetadata] = React.useState<LabelMetadata>(defaultLabelMetadata());
-    const [storageMetadata, setStorageMetadata] = React.useState<StorageMetadata>(defaultStorageMetadata());
     const [priceMetadata, setPriceMetadata] = React.useState<PriceMetadata>(defaultPriceMetadata());
     const [tokenMetadata, setTokenMetadata] = React.useState<TokenMetadata>(defaultTokenMetadata());
 
-    const [expanded, setExpanded] = React.useState<string[]>([]);
-
-    const [provider, setProvider] = React.useState(null);
+    const [traceResult, setTraceResult] = React.useState<TraceResponse>();
+    const [traceMetadata, setTraceMetadata] = React.useState<TraceMetadata>();
 
     React.useMemo(() => {
-        if (!chain) return;
+        if (!chain || Array.isArray(chain)) return;
+        if (!txhash || Array.isArray(txhash)) return;
 
-        console.log('setting provider to', chain, getChain(chain)?.rpcUrl);
-        setProvider(new JsonRpcProvider(getChain(chain)?.rpcUrl));
-    }, [chain]);
-
-    const doSearch = (chain: string, txhash: string) => {
         const chainConfig = getChain(chain);
         if (!chainConfig) return;
 
-        setTokenMetadata(defaultTokenMetadata());
-        setPriceMetadata(defaultPriceMetadata());
-        setStorageMetadata(defaultStorageMetadata());
+        setChainConfig(chainConfig);
 
-        setTransactionResponse(null);
-        setDecodedActions(null);
-        setTraceResult(null);
-        setTraceMetadata(null);
-        setShowStorageChanges(new Set());
+        const provider = new JsonRpcProvider(chainConfig.rpcUrl);
+        setProvider(provider);
 
-        setFetchTransactionError(null);
-        setFetchTraceError(null);
-        setDecodedActions(null);
+        setTokenMetadata({
+            ...defaultTokenMetadata(),
+            updater: setTokenMetadata,
+        });
+        setPriceMetadata({
+            ...defaultPriceMetadata(),
+            updater: setPriceMetadata,
+        });
+        setTransactionMetadata(undefined);
 
-        doApiRequest<TransactionInfoResponse>(`/api/v1/tx/${chain}/${txhash}`)
-            .then((resp) => {
-                let formatter = new Formatter();
+        Promise.all([provider.getTransaction(txhash), provider.getTransactionReceipt(txhash)])
+            .then(([transaction, receipt]) => {
+                provider.getBlock(receipt.blockHash).then((block) => {
+                    console.log('loaded transaction metadata');
+                    setTransactionMetadata({
+                        ok: true,
+                        result: {
+                            block: block,
+                            transaction: transaction,
+                            receipt: receipt,
+                        },
+                    });
 
-                if (resp.receipt.root === '0x') resp.receipt.root = undefined;
-                resp.receipt = formatter.receipt(resp.receipt);
-
-                resp.transaction = formatter.transaction(resp.metadata.rawTransaction);
-
-                setTransactionResponse(resp);
-
-                fetchDefiLlamaPrices(setPriceMetadata, [chainConfig.coingeckoId], resp.metadata.timestamp).catch(
-                    (e) => {
+                    fetchDefiLlamaPrices(setPriceMetadata, [chainConfig.coingeckoId], block.timestamp).catch((e) => {
                         console.log('failed to fetch price', e);
-                    },
-                );
+                    });
+                });
             })
             .catch((e) => {
-                setFetchTransactionError(e);
+                setTransactionMetadata({
+                    ok: false,
+                    error: e,
+                });
                 console.log('failed to fetch transaction', e);
             });
 
-        doApiRequest<TraceResult>(`/api/v1/trace/${chain}/${txhash}`)
+        doApiRequest<TraceResponse>(`/api/v1/trace/${chain}/${txhash}`)
             .then((resp) => {
                 console.log('loaded trace result', resp);
 
                 let labels: Record<string, string> = {};
                 let customLabels: Record<string, Record<string, string>> = {};
                 try {
-                    customLabels = JSON.parse(localStorage.getItem("pref:labels") || '{}');
-                } catch {
-                }
+                    customLabels = JSON.parse(localStorage.getItem('pref:labels') || '{}');
+                } catch {}
                 if (!(chain in customLabels)) {
                     customLabels[chain] = {};
                 }
 
+                for (let address of Object.keys(precompiles)) {
+                    labels[address] = 'Precompile';
+                }
+
                 let metadata: TraceMetadata = {
-                    chain: resp.chain,
                     abis: {},
                     nodesByPath: {},
                 };
 
-                for (let address of Object.keys(precompiles)) {
-                    labels[address] = 'Precompile';
-                }
+                let preprocess = (node: TraceEntry) => {
+                    metadata.nodesByPath[node.path] = node;
+
+                    if (node.type === 'call') {
+                        node.children.forEach(preprocess);
+                    }
+                };
+                preprocess(resp.entrypoint);
 
                 for (let [address, entries] of Object.entries(resp.addresses)) {
                     metadata.abis[address] = {};
@@ -194,287 +159,125 @@ export default function TransactionViewer() {
 
                 for (let address of Object.keys(labels)) {
                     if (labels[address] === 'Vyper_contract') {
-                        labels[address] = `Vyper_contract (0x${address.substring(2, 6)}..${address.substring(
-                            38,
-                            42,
-                        )})`;
+                        labels[address] = `Vyper_contract (0x${address.substring(2, 6)}..${address.substring(38, 42)})`;
                     }
                 }
-                console.log('loaded abis');
 
-                let defaultExpanded: string[] = [];
-                let allStorageOps: Array<TraceEntrySload | TraceEntrySstore> = [];
-                let preprocess = (node: TraceEntry) => {
-                    metadata.nodesByPath[node.path] = node;
-
-                    if (node.type === 'sstore' || node.type === 'sload') {
-                        allStorageOps.push(node);
-                    }
-
-                    if (node.type === 'call') {
-                        if (
-                            node.variant !== 'staticcall' &&
-                            (node.gasUsed > 32000 || node.path.split('.').length <= 4)
-                        ) {
-                            defaultExpanded.push(node.path);
-                        }
-
-                        node.children.forEach(preprocess);
-                    }
-                };
-                preprocess(resp.entrypoint);
-                console.log('preprocessed nodes');
-
-                let maxLength = 3;
-                while (true) {
-                    const visibleNodes = defaultExpanded.map(path => {
-                        const node = metadata.nodesByPath[path];
-                        if (node.type === 'call') return node.children.length + 1;
-                        return 1;
-                    }).reduce((v, a) => v + a, 0);
-
-                    if (visibleNodes < 32) {
-                        break;
-                    }
-
-                    defaultExpanded = defaultExpanded.filter(v => v.split(".").length <= maxLength);
-                    maxLength--;
-                }
-
-                // first, augment our preimages by hashing each potential storage slot
-                // this is because solidity inlines the offset at which a dynamic array will be placed
-                // so we don't know what it is from the trace
-                allStorageOps.forEach((node) => {
-                    resp.preimages[ethers.utils.keccak256(node.slot)] = node.slot;
-                });
-                console.log('computed preimages');
-
-                let newStorageMetadata: StorageMetadata = {
-                    fetched: {},
-                    slots: {},
-                };
-
-                let updateSlotInfo = (address: string, codehash: string, slot: string, info: SlotInfo) => {
-                    if (!(address in newStorageMetadata.slots)) newStorageMetadata.slots[address] = {};
-                    if (!(codehash in newStorageMetadata.slots[address]))
-                        newStorageMetadata.slots[address][codehash] = {};
-
-                    let knownSlot = knownSlots[slot];
-                    if (knownSlot) {
-                        info.resolved = true;
-                        info.variables[0] = {
-                            name: knownSlot.name,
-                            fullName: knownSlot.name,
-                            typeName: {
-                                typeDescriptions: {
-                                    typeString: knownSlot.type,
-                                    typeIdentifier: knownSlot.type,
-                                },
-                            },
-                            bits: knownSlot.bits,
-                        };
-                    }
-
-                    newStorageMetadata.slots[address][codehash][slot] = info;
-                };
-
-                let zero = new BN(0);
-                let max = new BN(2 ** 32);
-
-                let preimageSlotCache = {} as Record<string, BN>;
-                Object.keys(resp.preimages).forEach((hash) => {
-                    preimageSlotCache[hash] = new BN(hash.substring(2), 16);
-                });
-                console.log('warmed cache');
-
-                allStorageOps.forEach((node) => {
-                    let slot = node.slot;
-                    let [parentNode] = findAffectedContract(metadata, node);
-
-                    while (true) {
-                        let preimage = resp.preimages[slot];
-                        let preimageOffset = 0;
-                        if (!preimage) {
-                            let potentialPreimages = Object.keys(resp.preimages)
-                                .filter((hash) => {
-                                    if (!preimageSlotCache.hasOwnProperty(slot)) {
-                                        preimageSlotCache[slot] = new BN(slot.substring(2), 16);
-                                    }
-                                    let offset = preimageSlotCache[slot].sub(preimageSlotCache[hash]);
-                                    return offset.gt(zero) && offset.lt(max);
-                                })
-                                .map((hash) => {
-                                    return {
-                                        hash: hash,
-                                        preimage: resp.preimages[hash],
-                                        offset: preimageSlotCache[slot].sub(preimageSlotCache[hash]).toNumber(),
-                                    };
-                                });
-                            if (potentialPreimages.length !== 1) {
-                                if (potentialPreimages.length > 1) {
-                                    console.warn('found more than one potential preimage match', potentialPreimages);
-                                }
-                                updateSlotInfo(parentNode.to, parentNode.codehash, slot, {
-                                    type: 'raw',
-                                    resolved: false,
-                                    variables: {},
-                                });
-                                break;
-                            }
-
-                            preimage = potentialPreimages[0].preimage;
-                            preimageOffset = potentialPreimages[0].offset;
-                        }
-
-                        if (preimage.startsWith('0x')) {
-                            preimage = preimage.substring(2);
-                        }
-                        let baseSlot = '0x' + preimage.substring(preimage.length - 64).padStart(64, '0');
-                        updateSlotInfo(parentNode.to, parentNode.codehash, slot, {
-                            type: 'dynamic',
-                            resolved: false,
-                            variables: {},
-
-                            offset: preimageOffset,
-                            baseSlot: baseSlot,
-                            key: '0x' + preimage.substring(2, preimage.length - 64),
-                        });
-
-                        slot = baseSlot;
-                    }
-                });
-                console.log('done');
-
-                Object.keys(labels).forEach(addr => delete customLabels[chain][addr]);
+                Object.keys(labels).forEach((addr) => delete customLabels[chain][addr]);
                 localStorage.setItem('pref:labels', JSON.stringify(customLabels));
-
-                console.log(customLabels)
 
                 setTraceResult(resp);
                 setTraceMetadata(metadata);
-                setStorageMetadata(newStorageMetadata);
                 setLabelMetadata({
                     updater: setLabelMetadata,
                     labels: labels,
                     customLabels: customLabels,
-                })
-                setShowStorageChanges(new Set());
-                setExpanded(defaultExpanded);
+                });
+                setTraceResponse({
+                    ok: true,
+                    result: resp,
+                });
             })
             .catch((e) => {
-                setFetchTraceError(e);
+                setTraceResponse({
+                    ok: false,
+                    error: e,
+                });
                 console.log('failed to fetch trace', e);
             });
-    };
-
-    React.useEffect(() => {
-        if (!chain || Array.isArray(chain)) return;
-        if (!txhash || Array.isArray(txhash)) return;
-
-        doSearch(chain, txhash);
     }, [chain, txhash]);
 
-    React.useEffect(() => {
-        if (!traceResult || !traceMetadata || !transactionResponse) return;
-
-        try {
-            let [output, requestedMetadata] = decode(traceResult, traceMetadata);
-            console.log('decoded', output);
-            console.log('requested metadata for ', requestedMetadata);
-            setDecodedActions(output);
-
-            fetchDefiLlamaPrices(
-                setPriceMetadata,
-                Array.from(requestedMetadata.tokens).map(
-                    (token) => `${getChain(traceMetadata.chain)?.defillamaPrefix}:${token}`,
-                ),
-                transactionResponse.metadata.timestamp,
-            );
-
-            fetchTokenMetadata(setTokenMetadata, provider, Array.from(requestedMetadata.tokens));
-        } catch (e) {
-            setDecodeTransactionError(e);
-            console.log('failed to decode actions', e);
-        }
-    }, [chain, transactionResponse, traceResult, traceMetadata]);
-
     let transactionInfoGrid;
-    if (transactionResponse) {
-        transactionInfoGrid = (
-            <LabelMetadataContext.Provider value={labelMetadata}>
-                <PriceMetadataContext.Provider value={priceMetadata}>
-                    <TransactionInfo
-                        transactionResponse={transactionResponse}
-                        chainInfo={getChain(transactionResponse.metadata.chain)}
-                    />
-                </PriceMetadataContext.Provider>
-            </LabelMetadataContext.Provider>
-        );
+    if (transactionMetadata) {
+        if (transactionMetadata.ok) {
+            transactionInfoGrid = (
+                <TransactionMetadataContext.Provider value={transactionMetadata.result}>
+                    <ChainConfigContext.Provider value={chainConfig}>
+                        <LabelMetadataContext.Provider value={labelMetadata}>
+                            <PriceMetadataContext.Provider value={priceMetadata}>
+                                <TransactionInfo />
+                            </PriceMetadataContext.Provider>
+                        </LabelMetadataContext.Provider>
+                    </ChainConfigContext.Provider>
+                </TransactionMetadataContext.Provider>
+            );
+        } else {
+            transactionInfoGrid = <>Failed to fetch transaction: {transactionMetadata.error}</>;
+        }
     }
 
     let valueChanges;
-    if (transactionResponse && traceResult && traceMetadata) {
-        valueChanges = (
-            <LabelMetadataContext.Provider value={labelMetadata}>
-                <PriceMetadataContext.Provider value={priceMetadata}>
-                    <TokenMetadataContext.Provider value={tokenMetadata}>
-                        <ValueChange
-                            traceResult={traceResult}
-                            traceMetadata={traceMetadata}
-                            requestMetadata={(tokens) => {
-                                fetchDefiLlamaPrices(
-                                    setPriceMetadata,
-                                    tokens.map((token) => `${getChain(traceMetadata.chain)?.defillamaPrefix}:${token}`),
-                                    transactionResponse.metadata.timestamp,
-                                );
-                                fetchTokenMetadata(setTokenMetadata, provider, tokens);
-                            }}
-                        />
-                    </TokenMetadataContext.Provider>
-                </PriceMetadataContext.Provider>
-            </LabelMetadataContext.Provider>
-        );
+    if (transactionMetadata && traceResult && traceMetadata) {
+        if (transactionMetadata.ok) {
+            valueChanges = (
+                <TransactionMetadataContext.Provider value={transactionMetadata.result}>
+                    <ChainConfigContext.Provider value={chainConfig}>
+                        <LabelMetadataContext.Provider value={labelMetadata}>
+                            <PriceMetadataContext.Provider value={priceMetadata}>
+                                <TokenMetadataContext.Provider value={tokenMetadata}>
+                                    <ValueChange
+                                        traceResult={traceResult}
+                                        traceMetadata={traceMetadata}
+                                        requestMetadata={(tokens) => {
+                                            fetchDefiLlamaPrices(
+                                                setPriceMetadata,
+                                                tokens.map((token) => `${chainConfig.defillamaPrefix}:${token}`),
+                                                transactionMetadata.result.block.timestamp,
+                                            );
+                                            fetchTokenMetadata(setTokenMetadata, provider, tokens);
+                                        }}
+                                    />
+                                </TokenMetadataContext.Provider>
+                            </PriceMetadataContext.Provider>
+                        </LabelMetadataContext.Provider>
+                    </ChainConfigContext.Provider>
+                </TransactionMetadataContext.Provider>
+            );
+        } else {
+            transactionInfoGrid = <>Failed to fetch transaction or trace</>;
+        }
     }
 
     let transactionActions;
-    if (decodedActions && transactionResponse) {
-        transactionActions = (
-            <LabelMetadataContext.Provider value={labelMetadata}>
-                <PriceMetadataContext.Provider value={priceMetadata}>
-                    <TokenMetadataContext.Provider value={tokenMetadata}>
-                        <DecodeTree
-                            chain={traceMetadata ? traceMetadata.chain : ''}
-                            timestamp={transactionResponse.metadata.timestamp}
-                            decoded={decodedActions}
-                        />
-                    </TokenMetadataContext.Provider>
-                </PriceMetadataContext.Provider>
-            </LabelMetadataContext.Provider>
-        );
+    if (transactionMetadata && traceResult && traceMetadata) {
+        if (transactionMetadata.ok) {
+            transactionActions = (
+                <TransactionMetadataContext.Provider value={transactionMetadata.result}>
+                    <ChainConfigContext.Provider value={chainConfig}>
+                        <LabelMetadataContext.Provider value={labelMetadata}>
+                            <PriceMetadataContext.Provider value={priceMetadata}>
+                                <TokenMetadataContext.Provider value={tokenMetadata}>
+                                    <DecodeTree
+                                        traceResult={traceResult}
+                                        traceMetadata={traceMetadata}
+                                        provider={provider}
+                                    />
+                                </TokenMetadataContext.Provider>
+                            </PriceMetadataContext.Provider>
+                        </LabelMetadataContext.Provider>
+                    </ChainConfigContext.Provider>
+                </TransactionMetadataContext.Provider>
+            );
+        } else {
+            transactionActions = <>Failed to fetch transaction</>;
+        }
     }
 
     let traceTree;
-    if (traceResult && traceMetadata && storageMetadata) {
+    if (traceResult && traceMetadata) {
         traceTree = (
-            <LabelMetadataContext.Provider value={labelMetadata}>
-                <TraceTree
-                    traceResult={traceResult}
-                    traceMetadata={traceMetadata}
-                    showStorageChanges={showStorageChanges}
-                    setShowStorageChanges={setShowStorageChanges}
-                    expanded={expanded}
-                    setExpanded={setExpanded}
-                    storageMetadata={storageMetadata}
-                    setStorageMetadata={setStorageMetadata}
-                />
-            </LabelMetadataContext.Provider>
+            <ChainConfigContext.Provider value={chainConfig}>
+                <LabelMetadataContext.Provider value={labelMetadata}>
+                    <TraceTree traceResult={traceResult} traceMetadata={traceMetadata} />
+                </LabelMetadataContext.Provider>
+            </ChainConfigContext.Provider>
         );
     }
 
     return (
         <ThemeProvider theme={theme}>
             <div className={styles.container}>
-                <Home/>
+                <Home />
 
                 <Typography variant={'h6'} className="dark:invert">
                     Transaction Info
@@ -483,9 +286,7 @@ export default function TransactionViewer() {
                     <span className="dark:invert">{transactionInfoGrid}</span>
                 ) : (
                     <Typography variant={'body1'} className="dark:invert">
-                        {fetchTransactionError
-                            ? `Failed to fetch transaction: ${fetchTransactionError.message}`
-                            : 'Loading...'}
+                        Loading...
                     </Typography>
                 )}
 
@@ -507,9 +308,7 @@ export default function TransactionViewer() {
                     <span className="dark:invert">{transactionActions}</span>
                 ) : (
                     <Typography variant={'body1'} className="dark:invert">
-                        {decodeTransactionError
-                            ? `Failed to decode transaction: ${decodeTransactionError.message}`
-                            : 'Loading...'}
+                        Loading...
                     </Typography>
                 )}
 
@@ -520,7 +319,7 @@ export default function TransactionViewer() {
                     <span className="dark:invert">{traceTree}</span>
                 ) : (
                     <Typography variant={'body1'} className="dark:invert">
-                        {fetchTraceError ? `Failed to fetch trace: ${fetchTraceError.message}` : 'Loading...'}
+                        Loading...
                     </Typography>
                 )}
             </div>

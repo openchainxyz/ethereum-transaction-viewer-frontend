@@ -1,8 +1,8 @@
-import { SlotInfo } from './types';
+import { SlotInfo } from '../types';
 import WithSeparator from 'react-with-separator';
 import * as React from 'react';
 import TreeItem from '@mui/lab/TreeItem';
-import { TreeItemContentSpan } from './helpers';
+import { TreeItemContentSpan } from '../helpers';
 
 type SlotTreeItemContentProps = {
     slot: string;

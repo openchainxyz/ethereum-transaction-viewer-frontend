@@ -1,15 +1,16 @@
-import {Grid, TextField, Tooltip, Typography} from '@mui/material';
+import { Grid, TextField, Tooltip, Typography } from '@mui/material';
 import * as React from 'react';
-import {useContext} from 'react';
-import {DateTime} from 'luxon';
+import { useContext } from 'react';
+import { DateTime } from 'luxon';
 import humanizeDuration from 'humanize-duration';
-import {formatUnits} from 'ethers/lib/utils';
-import {formatUnitsSmartly, formatUsd} from '../helpers';
-import {DataRenderer} from '../DataRenderer';
-import {TransactionInfoResponse} from '../types';
-import {ChainConfig} from '../Chains';
-import {PriceMetadataContext} from '../metadata/prices';
-import {ethers} from "ethers";
+import { formatUnits } from 'ethers/lib/utils';
+import { formatUnitsSmartly, formatUsd } from '../helpers';
+import { DataRenderer } from '../DataRenderer';
+import { TransactionInfoResponse } from '../types';
+import { ChainConfig, ChainConfigContext, getChain } from '../Chains';
+import { PriceMetadataContext } from '../metadata/prices';
+import { ethers } from 'ethers';
+import { TransactionMetadataContext } from '../metadata/transaction';
 
 type TransactionAttributeGridProps = {
     children?: JSX.Element[];
@@ -44,41 +45,65 @@ type TransactionAttributeProps = {
 export const TransactionAttribute = (props: TransactionAttributeProps) => {
     return (
         <Grid item>
-            <span style={{color: '#a8a19f'}}>{props.name}:</span>&nbsp;{props.children}
+            <span style={{ color: '#a8a19f' }}>{props.name}:</span>&nbsp;{props.children}
         </Grid>
     );
 };
 
-type TransactionInfoProps = {
-    transactionResponse: TransactionInfoResponse;
-    chainInfo: ChainConfig;
+type LegacyGasMetadata = {
+    type: 'legacy';
 };
 
+type EIP1559GasMetadata = {
+    type: 'eip1559';
+};
+
+type GasMetadata = LegacyGasMetadata | EIP1559GasMetadata;
+
+type TransactionMetadata = {
+    status: string;
+
+    localTime: string;
+    utcTime: string;
+    timeSince: string;
+
+    block: number;
+
+    from: string;
+    to: string;
+    type: string;
+
+    gasMetadata: GasMetadata;
+
+    value: bigint;
+};
+
+type TransactionInfoProps = {};
+
 export const TransactionInfo = (props: TransactionInfoProps) => {
-    const {transactionResponse, chainInfo} = props;
+    console.time('render transaction info');
+    const transactionMetadata = useContext(TransactionMetadataContext);
+    const chainConfig = useContext(ChainConfigContext);
     const priceMetadata = useContext(PriceMetadataContext);
 
-    let blockTimestamp = DateTime.fromSeconds(transactionResponse.metadata.timestamp);
+    let blockTimestamp = DateTime.fromSeconds(transactionMetadata.block.timestamp);
 
     let localTime = blockTimestamp.toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
     let utcTime = blockTimestamp.toUTC().toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
-    let timeSince = humanizeDuration(
-        DateTime.now().toMillis() - blockTimestamp.toMillis(),
-        {largest: 2},
-    );
+    let timeSince = humanizeDuration(DateTime.now().toMillis() - blockTimestamp.toMillis(), { largest: 2 });
 
     let gasPriceInfo;
-    if (transactionResponse.transaction.type === 2) {
+    if (transactionMetadata.transaction.type === 2) {
         gasPriceInfo = (
             <>
                 <TransactionAttribute name={'Gas Price'}>
-                    {formatUnits(transactionResponse.receipt.effectiveGasPrice, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionMetadata.receipt.effectiveGasPrice, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
                 <TransactionAttribute name={'Max Priority Fee'}>
-                    {formatUnits(transactionResponse.transaction.maxPriorityFeePerGas!, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionMetadata.transaction.maxPriorityFeePerGas!, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
                 <TransactionAttribute name={'Max Fee'}>
-                    {formatUnits(transactionResponse.transaction.maxFeePerGas!, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionMetadata.transaction.maxFeePerGas!, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
             </>
         );
@@ -86,32 +111,32 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
         gasPriceInfo = (
             <>
                 <TransactionAttribute name={'Gas Price'}>
-                    {formatUnits(transactionResponse.transaction.gasPrice!, 'gwei')}&nbsp;gwei
+                    {formatUnits(transactionMetadata.transaction.gasPrice!, 'gwei')}&nbsp;gwei
                 </TransactionAttribute>
             </>
         );
     }
 
     let transactionStatus;
-    if (transactionResponse.receipt.status === 0) {
+    if (transactionMetadata.receipt.status === 0) {
         transactionStatus = 'Failed';
-    } else if (transactionResponse.receipt.status === 1) {
+    } else if (transactionMetadata.receipt.status === 1) {
         transactionStatus = 'Succeeded';
     } else {
         transactionStatus = 'Unknown';
     }
 
-    let historicalEthPrice = priceMetadata.prices[chainInfo.coingeckoId]?.historicalPrice;
-    let currentEthPrice = priceMetadata.prices[chainInfo.coingeckoId]?.currentPrice;
+    let historicalEthPrice = priceMetadata.prices[chainConfig.coingeckoId]?.historicalPrice;
+    let currentEthPrice = priceMetadata.prices[chainConfig.coingeckoId]?.currentPrice;
 
-    let transactionValue = transactionResponse.transaction.value.toBigInt();
+    let transactionValue = transactionMetadata.transaction.value.toBigInt();
     let transactionFee =
-        transactionResponse.receipt.gasUsed.toBigInt() *
-        (transactionResponse.receipt.effectiveGasPrice.toBigInt() ||
-            transactionResponse.transaction.gasPrice?.toBigInt());
+        transactionMetadata.receipt.gasUsed.toBigInt() *
+        (transactionMetadata.receipt.effectiveGasPrice.toBigInt() ||
+            transactionMetadata.transaction.gasPrice?.toBigInt());
 
-    let transactionValueStr = formatUnitsSmartly(transactionValue, chainInfo.nativeSymbol);
-    let transactionFeeStr = formatUnitsSmartly(transactionFee, chainInfo.nativeSymbol);
+    let transactionValueStr = formatUnitsSmartly(transactionValue, chainConfig.nativeSymbol);
+    let transactionFeeStr = formatUnitsSmartly(transactionFee, chainConfig.nativeSymbol);
 
     let transactionValueUSD;
     let transactionFeeUSD;
@@ -148,24 +173,25 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
         );
     }
 
-    let calldataAsUtf8;
-    {
+    let calldataAsUtf8 = React.useMemo(() => {
         try {
-            const data = transactionResponse.transaction.data.replace(/(00)+$/g, '');
+            const data = transactionMetadata.transaction.data.replace(/(00)+$/g, '');
             const utf8Str = ethers.utils.toUtf8String(data);
             if (!/[\x00-\x09\x0E-\x1F]/.test(utf8Str)) {
-                calldataAsUtf8 = <TransactionAttributeRow>
-                    <TransactionAttribute name={'Message'}>
-                        <br/>
-                        {utf8Str}
-                    </TransactionAttribute>
-                </TransactionAttributeRow>
+                return (
+                    <TransactionAttributeRow>
+                        <TransactionAttribute name={'Message'}>
+                            <br />
+                            {utf8Str}
+                        </TransactionAttribute>
+                    </TransactionAttributeRow>
+                );
             }
-        } catch {
-        }
-    }
+        } catch {}
+        return null;
+    }, [transactionMetadata]);
 
-    return (
+    const l = (
         <>
             <Typography variant={'body1'} component={'div'}>
                 <TransactionAttributeGrid>
@@ -179,29 +205,29 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                         </TransactionAttribute>
                         <TransactionAttribute name={'Block'}>
                             <a
-                                href={`${chainInfo.blockexplorerUrl}/block/${transactionResponse.receipt.blockNumber}`}
+                                href={`${chainConfig.blockexplorerUrl}/block/${transactionMetadata.receipt.blockNumber}`}
                                 target={'_blank'}
                                 rel={'noreferrer noopener'}
                             >
-                                {transactionResponse.receipt.blockNumber}
+                                {transactionMetadata.receipt.blockNumber}
                             </a>
                         </TransactionAttribute>
                     </TransactionAttributeRow>
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'From'}>
                             <DataRenderer
-                                chain={chainInfo.id}
+                                chain={chainConfig.id}
                                 showCopy={true}
                                 preferredType={'address'}
-                                data={transactionResponse.transaction.from}
+                                data={transactionMetadata.transaction.from}
                             />
                         </TransactionAttribute>
-                        <TransactionAttribute name={transactionResponse.transaction.to ? 'To' : 'Created'}>
+                        <TransactionAttribute name={transactionMetadata.transaction.to ? 'To' : 'Created'}>
                             <DataRenderer
-                                chain={chainInfo.id}
+                                chain={chainConfig.id}
                                 showCopy={true}
                                 preferredType={'address'}
-                                data={transactionResponse.transaction.to || transactionResponse.receipt.contractAddress}
+                                data={transactionMetadata.transaction.to || transactionMetadata.receipt.contractAddress}
                             />
                         </TransactionAttribute>
                     </TransactionAttributeRow>
@@ -217,24 +243,24 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                     </TransactionAttributeRow>
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'Gas Used'}>
-                            {transactionResponse.receipt.gasUsed.toString()}/
-                            {transactionResponse.transaction.gasLimit.toString()}
+                            {transactionMetadata.receipt.gasUsed.toString()}/
+                            {transactionMetadata.transaction.gasLimit.toString()}
                         </TransactionAttribute>
                         {gasPriceInfo}
                     </TransactionAttributeRow>
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'Nonce'}>
-                            {transactionResponse.transaction.nonce}
+                            {transactionMetadata.transaction.nonce}
                         </TransactionAttribute>
                         <TransactionAttribute name={'Index'}>
-                            {transactionResponse.receipt.transactionIndex}
+                            {transactionMetadata.receipt.transactionIndex}
                         </TransactionAttribute>
                         <TransactionAttribute name={'Type'}>
-                            {transactionResponse.transaction.type === 2
+                            {transactionMetadata.transaction.type === 2
                                 ? 'EIP-1559'
-                                : transactionResponse.transaction.type === 1
-                                    ? 'Access List'
-                                    : 'Legacy'}
+                                : transactionMetadata.transaction.type === 1
+                                ? 'Access List'
+                                : 'Legacy'}
                         </TransactionAttribute>
                     </TransactionAttributeRow>
                     {calldataAsUtf8}
@@ -242,4 +268,6 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
             </Typography>
         </>
     );
+    console.timeEnd('render transaction info');
+    return l;
 };

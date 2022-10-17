@@ -41,11 +41,7 @@ export const ParamTreeView = (props: ParamTreeViewProps) => {
                 label = (
                     <>
                         {paramName}:&nbsp;
-                        <DataRenderer
-                            chain={props.traceMetadata.chain}
-                            decodedData={value}
-                            preferredType={param.format()}
-                        ></DataRenderer>
+                        <DataRenderer decodedData={value} preferredType={param.format()}></DataRenderer>
                     </>
                 );
                 children = [];

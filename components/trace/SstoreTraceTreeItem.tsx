@@ -1,19 +1,20 @@
-import { StorageMetadata, TraceEntrySstore, TraceMetadata, TraceResult } from '../types';
+import { StorageMetadata, TraceMetadata } from '../types';
 import * as React from 'react';
 import TreeView from '@mui/lab/TreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { renderSlotTree } from '../slotTree';
+import { renderSlotTree } from './SlotTree';
 import { DataRenderer } from '../DataRenderer';
 import TreeItem from '@mui/lab/TreeItem';
 import { findAffectedContract, TreeItemContentSpan } from '../helpers';
 import WithSeparator from 'react-with-separator';
 import { Grid } from '@mui/material';
-import { TraceTreeItem, TraceTreeNodeLabel } from '../TraceTreeItem';
-import { TraceTreeDialog } from '../TraceTreeDialog';
+import { TraceTreeItem, TraceTreeNodeLabel } from './TraceTreeItem';
+import { TraceTreeDialog } from './TraceTreeDialog';
+import { TraceEntrySstore, TraceResponse } from '../api';
 
 type SstoreTraceTreeItemProps = {
-    traceResult: TraceResult;
+    traceResult: TraceResponse;
     traceMetadata: TraceMetadata;
     storageMetadata: StorageMetadata;
     node: TraceEntrySstore;
@@ -82,20 +83,8 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
             defaultExpandIcon={<ChevronRightIcon />}
         >
             {vars.map((v, i) => {
-                let oldDataRenderer = (
-                    <DataRenderer
-                        chain={props.traceMetadata.chain}
-                        data={v.oldValue}
-                        preferredType={v.type}
-                    />
-                );
-                let newDataRenderer = (
-                    <DataRenderer
-                        chain={props.traceMetadata.chain}
-                        data={v.newValue}
-                        preferredType={v.type}
-                    />
-                );
+                let oldDataRenderer = <DataRenderer data={v.oldValue} preferredType={v.type} />;
+                let newDataRenderer = <DataRenderer data={v.newValue} preferredType={v.type} />;
 
                 return (
                     <TreeItem
@@ -151,20 +140,8 @@ export const SstoreTraceTreeItem = (props: SstoreTraceTreeItemProps) => {
             &nbsp;
             <WithSeparator separator={<>,&nbsp;</>}>
                 {vars.map((v, i) => {
-                    let oldDataRenderer = (
-                        <DataRenderer
-                            chain={props.traceMetadata.chain}
-                            data={v.oldValue}
-                            preferredType={v.type}
-                        />
-                    );
-                    let newDataRenderer = (
-                        <DataRenderer
-                            chain={props.traceMetadata.chain}
-                            data={v.newValue}
-                            preferredType={v.type}
-                        />
-                    );
+                    let oldDataRenderer = <DataRenderer data={v.oldValue} preferredType={v.type} />;
+                    let newDataRenderer = <DataRenderer data={v.newValue} preferredType={v.type} />;
                     if (v.oldValue === v.newValue) {
                         return (
                             <span

@@ -53,11 +53,7 @@ export class TransferDecoder extends Decoder<TransferAction> {
                 this.formatTokenAmount(opts, result.token, result.amount),
                 <DataRenderer chain={opts.chain} preferredType={'address'} data={result.from} />,
                 <DataRenderer chain={opts.chain} preferredType={'address'} data={result.to} />,
-                <DataRenderer
-                    chain={opts.chain}
-                    preferredType={'address'}
-                    data={result.operator}
-                />,
+                <DataRenderer chain={opts.chain} preferredType={'address'} data={result.operator} />,
             ],
         );
     }

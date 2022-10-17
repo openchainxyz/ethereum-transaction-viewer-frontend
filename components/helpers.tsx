@@ -1,14 +1,11 @@
 import React from 'react';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { TraceEntry, TraceEntryCallable, TraceMetadata } from './types';
+import { TraceEntryCallable, TraceMetadata } from './types';
 import { formatUnits, ParamType } from 'ethers/lib/utils';
 import { createTheme } from '@mui/material';
 // noinspection ES6UnusedImports
 import {} from '@mui/lab/themeAugmentation';
-
-export function apiEndpoint() {
-    return process.env.NEXT_PUBLIC_API_HOST || 'https://tx.eth.samczsun.com';
-}
+import { TraceEntry } from './api';
 
 type TreeItemContentProps = {
     children: React.ReactNode;

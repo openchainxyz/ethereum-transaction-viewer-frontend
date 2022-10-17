@@ -1,9 +1,9 @@
-import {ChainConfig, getChain, SupportedChains} from '../Chains';
-import {BaseProvider, JsonRpcBatchProvider} from '@ethersproject/providers';
+import { ChainConfig, getChain, SupportedChains } from '../Chains';
+import { BaseProvider, JsonRpcBatchProvider } from '@ethersproject/providers';
 import React from 'react';
-import {ethers} from 'ethers';
-import {defaultAbiCoder, ParamType} from '@ethersproject/abi';
-import {NATIVE_TOKEN} from '../decoder/actions';
+import { ethers } from 'ethers';
+import { defaultAbiCoder, ParamType } from '@ethersproject/abi';
+import { NATIVE_TOKEN } from '../decoder/actions';
 
 export type TokenInfo = {
     symbol?: string;
@@ -12,12 +12,14 @@ export type TokenInfo = {
 };
 
 export type TokenMetadata = {
+    updater: React.Dispatch<React.SetStateAction<TokenMetadata>>;
     status: Record<string, 'pending' | 'fetched'>;
     tokens: Record<string, TokenInfo>;
 };
 
 export const defaultTokenMetadata = (): TokenMetadata => {
     return {
+        updater: () => {},
         status: SupportedChains.reduce((o, chain) => {
             return {
                 ...o,
@@ -47,14 +49,16 @@ export const fetchTokenMetadata = (
     return new Promise<void>((resolve, reject) => {
         setTimeout(() => {
             setMetadata((prevState) => {
-                const filteredTokens = tokens.filter((token) => prevState.status[token] === undefined && token != NATIVE_TOKEN);
+                const filteredTokens = tokens.filter(
+                    (token) => prevState.status[token] === undefined && token != NATIVE_TOKEN,
+                );
 
                 if (filteredTokens.length === 0) {
                     resolve();
                     return prevState;
                 }
 
-                const newState = {...prevState};
+                const newState = { ...prevState };
                 filteredTokens.forEach((token) => (newState.status[token] = 'pending'));
 
                 Promise.all(
@@ -116,8 +120,9 @@ export const fetchTokenMetadata = (
                                 provider
                                     .call({
                                         to: token,
-                                        data: ethers.utils.id('supportsInterface(bytes4)').substring(0, 10) +
-                                            defaultAbiCoder.encode(["bytes4"], ["0x80ac58cd"]).substring(2),
+                                        data:
+                                            ethers.utils.id('supportsInterface(bytes4)').substring(0, 10) +
+                                            defaultAbiCoder.encode(['bytes4'], ['0x80ac58cd']).substring(2),
                                     })
                                     .then((isNftHex) => {
                                         const isNft = isNftHex.length > 2 ? BigInt(isNftHex) == 1n : false;
@@ -137,7 +142,7 @@ export const fetchTokenMetadata = (
                         resolve();
 
                         setMetadata((prevState) => {
-                            const newState = {...prevState};
+                            const newState = { ...prevState };
                             filteredTokens.forEach((token) => {
                                 newState.status[token] = 'fetched';
                                 newState.tokens[token] = {};

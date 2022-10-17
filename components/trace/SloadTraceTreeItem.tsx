@@ -1,19 +1,20 @@
-import { StorageMetadata, TraceEntrySload, TraceMetadata, TraceResult } from '../types';
+import { StorageMetadata, TraceMetadata } from '../types';
 import * as React from 'react';
 import TreeView from '@mui/lab/TreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { renderSlotTree } from '../slotTree';
+import { renderSlotTree } from './SlotTree';
 import { DataRenderer } from '../DataRenderer';
 import TreeItem from '@mui/lab/TreeItem';
 import { findAffectedContract, TreeItemContentSpan } from '../helpers';
 import WithSeparator from 'react-with-separator';
 import { Grid } from '@mui/material';
-import { TraceTreeItem, TraceTreeNodeLabel } from '../TraceTreeItem';
-import { TraceTreeDialog } from '../TraceTreeDialog';
+import { TraceTreeItem, TraceTreeNodeLabel } from './TraceTreeItem';
+import { TraceTreeDialog } from './TraceTreeDialog';
+import { TraceEntrySload, TraceResponse } from '../api';
 
 type SloadTraceTreeItemProps = {
-    traceResult: TraceResult;
+    traceResult: TraceResponse;
     traceMetadata: TraceMetadata;
     storageMetadata: StorageMetadata;
     node: TraceEntrySload;
@@ -81,13 +82,7 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
             defaultExpandIcon={<ChevronRightIcon />}
         >
             {vars.map((v, i) => {
-                let dataRenderer = (
-                    <DataRenderer
-                        chain={props.traceMetadata.chain}
-                        data={v.value}
-                        preferredType={v.type}
-                    />
-                );
+                let dataRenderer = <DataRenderer data={v.value} preferredType={v.type} />;
 
                 return (
                     <TreeItem
@@ -142,11 +137,7 @@ export const SloadTraceTreeItem = (props: SloadTraceTreeItemProps) => {
                     return (
                         <React.Fragment key={i}>
                             {v.name}:&nbsp;
-                            <DataRenderer
-                                chain={props.traceMetadata.chain}
-                                data={v.value}
-                                preferredType={v.type}
-                            />
+                            <DataRenderer data={v.value} preferredType={v.type} />
                         </React.Fragment>
                     );
                 })}

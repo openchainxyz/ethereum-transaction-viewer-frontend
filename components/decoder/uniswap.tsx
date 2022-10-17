@@ -1,4 +1,3 @@
-import { TraceEntry, TraceEntryCall } from '../types';
 import { DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic } from './types';
 import { DataRenderer } from '../DataRenderer';
 import { BigNumber, BytesLike, ethers } from 'ethers';
@@ -6,6 +5,7 @@ import * as React from 'react';
 import { EventFragment, Result } from '@ethersproject/abi';
 import { FunctionFragment } from '@ethersproject/abi/lib';
 import { SwapAction } from './actions';
+import { TraceEntry, TraceEntryCall } from '../api';
 
 const uniswapsByRouter: Record<string, any> = {
     '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D': {
@@ -240,14 +240,10 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
         }
 
         keys.push('recipient');
-        values.push(
-            <DataRenderer chain={opts.chain} preferredType={'address'} data={result.recipient} />,
-        );
+        values.push(<DataRenderer chain={opts.chain} preferredType={'address'} data={result.recipient} />);
 
         keys.push('actor');
-        values.push(
-            <DataRenderer chain={opts.chain} preferredType={'address'} data={result.operator} />,
-        );
+        values.push(<DataRenderer chain={opts.chain} preferredType={'address'} data={result.operator} />);
 
         return this.renderResult('swap', '#645e9d', keys, values);
     }
@@ -391,11 +387,7 @@ export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterA
                 this.formatTokenAmount(opts, result.tokenA, result.amountA),
                 this.formatTokenAmount(opts, result.tokenB, result.amountB),
                 this.formatTokenAmount(opts, result.pool, result.liquidity),
-                <DataRenderer
-                    chain={opts.chain}
-                    preferredType={'address'}
-                    data={result.recipient}
-                />,
+                <DataRenderer chain={opts.chain} preferredType={'address'} data={result.recipient} />,
                 <DataRenderer chain={opts.chain} preferredType={'address'} data={result.actor} />,
             ],
         );
@@ -559,11 +551,7 @@ export class UniswapV2RouterRemoveLiquidityDecoder extends Decoder<UniswapV2Rout
                 this.formatTokenAmount(opts, result.tokenA, result.amountA),
                 this.formatTokenAmount(opts, result.tokenB, result.amountB),
                 this.formatTokenAmount(opts, result.pool, result.liquidity),
-                <DataRenderer
-                    chain={opts.chain}
-                    preferredType={'address'}
-                    data={result.recipient}
-                />,
+                <DataRenderer chain={opts.chain} preferredType={'address'} data={result.recipient} />,
                 <DataRenderer chain={opts.chain} preferredType={'address'} data={result.actor} />,
             ],
         );

@@ -1,10 +1,10 @@
-import {DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic} from "./types";
-import {EventFragment, FunctionFragment} from "@ethersproject/abi/lib";
-import humanizeDuration from "humanize-duration";
-import {NATIVE_TOKEN} from "./actions";
-import {ethers} from "ethers";
-import {DateTime} from "luxon";
-import {Tooltip} from "@mui/material";
+import { DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic } from './types';
+import { EventFragment, FunctionFragment } from '@ethersproject/abi/lib';
+import humanizeDuration from 'humanize-duration';
+import { NATIVE_TOKEN } from './actions';
+import { ethers } from 'ethers';
+import { DateTime } from 'luxon';
+import { Tooltip } from '@mui/material';
 
 export type ENSRegisterAction = {
     type: string;
@@ -18,17 +18,18 @@ export type ENSRegisterAction = {
 
     resolver?: string;
     addr?: string;
-}
+};
 
 export class ENSDecoder extends Decoder<ENSRegisterAction> {
     functions = {
         'register(string name, address owner, uint256 duration, bytes32 secret)': {
             hasResolver: false,
         },
-        'registerWithConfig(string name, address owner, uint256 duration, bytes32 secret, address resolver, address addr)': {
-            hasResolver: true,
-        }
-    }
+        'registerWithConfig(string name, address owner, uint256 duration, bytes32 secret, address resolver, address addr)':
+            {
+                hasResolver: true,
+            },
+    };
 
     constructor() {
         super('ens');
@@ -55,9 +56,11 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
         let cost = node.value.toBigInt();
 
         if (node.logs) {
-            const registeredFragment = EventFragment.from(`NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires)`);
+            const registeredFragment = EventFragment.from(
+                `NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires)`,
+            );
 
-            const lastLog = node.logs.reverse().find(log => hasTopic(log, registeredFragment));
+            const lastLog = node.logs.reverse().find((log) => hasTopic(log, registeredFragment));
             if (lastLog) {
                 const abi = new ethers.utils.Interface([registeredFragment]);
                 const parsedEvent = abi.parseLog(lastLog);
@@ -70,7 +73,7 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
             type: this.name,
             operator: node.from,
             owner: inputs['owner'],
-            name: inputs['name'] + ".eth",
+            name: inputs['name'] + '.eth',
             duration: inputs['duration'].toNumber(),
             cost: cost,
         };
@@ -89,17 +92,19 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
             result.name,
             this.formatAddress(result.owner),
             <Tooltip title={humanizeDuration(result.duration * 1000)}>
-                <span>{DateTime.fromSeconds(opts.timestamp + result.duration).toFormat('yyyy-MM-dd hh:mm:ss ZZZZ')}</span>
+                <span>
+                    {DateTime.fromSeconds(opts.timestamp + result.duration).toFormat('yyyy-MM-dd hh:mm:ss ZZZZ')}
+                </span>
             </Tooltip>,
             this.formatTokenAmount(opts, NATIVE_TOKEN, result.cost),
         ];
 
-        if (result.resolver !== undefined && result.resolver !== "0x0000000000000000000000000000000000000000") {
+        if (result.resolver !== undefined && result.resolver !== '0x0000000000000000000000000000000000000000') {
             keys.push('resolver');
             vals.push(this.formatAddress(result.resolver));
         }
 
-        if (result.addr !== undefined && result.addr !== "0x0000000000000000000000000000000000000000") {
+        if (result.addr !== undefined && result.addr !== '0x0000000000000000000000000000000000000000') {
             keys.push('addr');
             vals.push(this.formatAddress(result.addr));
         }
