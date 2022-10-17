@@ -35,8 +35,7 @@ function Navbar() {
             if (darkItem) {
                 try {
                     return !!JSON.parse(darkItem);
-                } catch {
-                }
+                } catch {}
             }
         }
         return false;

@@ -1,11 +1,11 @@
 import React from 'react';
-import {BigNumber, BigNumberish, ethers} from 'ethers';
-import {TraceMetadata} from './types';
-import {formatUnits, ParamType} from 'ethers/lib/utils';
-import {createTheme} from '@mui/material';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { TraceMetadata } from './types';
+import { formatUnits, ParamType } from 'ethers/lib/utils';
+import { createTheme } from '@mui/material';
 // noinspection ES6UnusedImports
 import {} from '@mui/lab/themeAugmentation';
-import {TraceEntry, TraceEntryCall} from './api';
+import { TraceEntry, TraceEntryCall } from './api';
 
 type TreeItemContentProps = {
     children: React.ReactNode;
@@ -99,15 +99,17 @@ export const theme = createTheme({
 });
 
 // lmao ethers wtf
-export const BuiltinErrors: Record<string,
-    { signature: string; inputs: Array<ParamType>; name: string; reason?: boolean }> = {
+export const BuiltinErrors: Record<
+    string,
+    { signature: string; inputs: Array<ParamType>; name: string; reason?: boolean }
+> = {
     '0x08c379a0': {
         signature: 'Error(string)',
         name: 'Error',
         inputs: [ParamType.from('string message')],
         reason: true,
     },
-    '0x4e487b71': {signature: 'Panic(uint256)', name: 'Panic', inputs: [ParamType.from('uint256 code')]},
+    '0x4e487b71': { signature: 'Panic(uint256)', name: 'Panic', inputs: [ParamType.from('uint256 code')] },
 };
 
 export const TreeItemContentSpan = (props: TreeItemContentProps) => {
@@ -159,10 +161,7 @@ export const chunkString = (str: string, len: number): string[] => {
     return r;
 };
 
-export const findAffectedContract = (
-    metadata: TraceMetadata,
-    node: TraceEntry,
-): [TraceEntryCall, TraceEntryCall[]] => {
+export const findAffectedContract = (metadata: TraceMetadata, node: TraceEntry): [TraceEntryCall, TraceEntryCall[]] => {
     let path: TraceEntryCall[] = [];
 
     let parents = node.path.split('.');

@@ -1,15 +1,15 @@
-import {Grid, Tooltip, Typography} from '@mui/material';
+import { Grid, Tooltip, Typography } from '@mui/material';
 import * as React from 'react';
-import {useContext} from 'react';
-import {DateTime} from 'luxon';
+import { useContext } from 'react';
+import { DateTime } from 'luxon';
 import humanizeDuration from 'humanize-duration';
-import {formatUnits} from 'ethers/lib/utils';
-import {formatUnitsSmartly, formatUsd} from '../helpers';
-import {DataRenderer} from '../DataRenderer';
-import {ChainConfigContext} from '../Chains';
-import {PriceMetadataContext} from '../metadata/prices';
-import {ethers} from 'ethers';
-import {TransactionMetadataContext} from '../metadata/transaction';
+import { formatUnits } from 'ethers/lib/utils';
+import { formatUnitsSmartly, formatUsd } from '../helpers';
+import { DataRenderer } from '../DataRenderer';
+import { ChainConfigContext } from '../Chains';
+import { PriceMetadataContext } from '../metadata/prices';
+import { ethers } from 'ethers';
+import { TransactionMetadataContext } from '../metadata/transaction';
 
 type TransactionAttributeGridProps = {
     children?: React.ReactNode[];
@@ -44,7 +44,7 @@ type TransactionAttributeProps = {
 export const TransactionAttribute = (props: TransactionAttributeProps) => {
     return (
         <Grid item>
-            <span style={{color: '#a8a19f'}}>{props.name}:</span>&nbsp;{props.children}
+            <span style={{ color: '#a8a19f' }}>{props.name}:</span>&nbsp;{props.children}
         </Grid>
     );
 };
@@ -89,7 +89,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
 
     let localTime = blockTimestamp.toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
     let utcTime = blockTimestamp.toUTC().toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
-    let timeSince = humanizeDuration(DateTime.now().toMillis() - blockTimestamp.toMillis(), {largest: 2});
+    let timeSince = humanizeDuration(DateTime.now().toMillis() - blockTimestamp.toMillis(), { largest: 2 });
 
     let gasPriceInfo;
     if (transactionMetadata.transaction.type === 2) {
@@ -180,14 +180,13 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
             calldataAsUtf8 = (
                 <TransactionAttributeRow>
                     <TransactionAttribute name={'Message'}>
-                        <br/>
+                        <br />
                         {utf8Str}
                     </TransactionAttribute>
                 </TransactionAttributeRow>
             );
         }
-    } catch {
-    }
+    } catch {}
 
     const l = (
         <>
@@ -255,8 +254,8 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                             {transactionMetadata.transaction.type === 2
                                 ? 'EIP-1559'
                                 : transactionMetadata.transaction.type === 1
-                                    ? 'Access List'
-                                    : 'Legacy'}
+                                ? 'Access List'
+                                : 'Legacy'}
                         </TransactionAttribute>
                     </TransactionAttributeRow>
                     {calldataAsUtf8}
