@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Tooltip } from '@mui/material';
 import { formatUsd } from '../helpers';
 import { getChain } from '../Chains';
-import { ParamType } from 'ethers/lib/utils';
+import {LogDescription, ParamType} from 'ethers/lib/utils';
 import WithSeparator from 'react-with-separator';
 import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
 import { defaultAbiCoder, EventFragment, FunctionFragment, Result } from '@ethersproject/abi/lib';
@@ -209,6 +209,11 @@ export abstract class Decoder<T extends BaseAction> {
                 ? defaultAbiCoder.decode(functionFragment.outputs, ethers.utils.arrayify(node.returndata))
                 : null,
         ];
+    }
+
+    decodeEventWithFragment(log: Log, eventFragment: string | EventFragment): LogDescription {
+        const abi = new ethers.utils.Interface([eventFragment]);
+        return abi.parseLog(log);
     }
 
     formatAddress(addr: string): JSX.Element {

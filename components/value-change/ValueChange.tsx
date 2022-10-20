@@ -6,7 +6,7 @@ import React, { useContext } from 'react';
 import { SpanIconButton } from '../SpanIconButton';
 import { BigNumber, ethers } from 'ethers';
 import { NATIVE_TOKEN } from '../decoder/actions';
-import { formatUsd } from '../helpers';
+import {findAffectedContract, formatUsd} from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { ChainConfigContext } from '../Chains';
 import { fetchDefiLlamaPrices, getPriceOfToken, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
@@ -173,21 +173,35 @@ const computeBalanceChanges = (
             .filter((child): child is TraceEntryLog => child.type === 'log')
             .forEach((traceLog) => {
                 if (traceLog.topics.length === 0) return;
-                if (traceLog.topics[0] !== '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef') return;
+                if (traceLog.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef') {
+                    const [parentNode] = findAffectedContract(traceMetadata, traceLog);
 
-                const parentNode = node;
+                    try {
+                        const parsedEvent = traceMetadata.abis[node.to][node.codehash].parseLog({
+                            topics: traceLog.topics,
+                            data: traceLog.data,
+                        });
 
-                try {
-                    const parsedEvent = traceMetadata.abis[parentNode.to][parentNode.codehash].parseLog({
-                        topics: traceLog.topics,
-                        data: traceLog.data,
-                    });
+                        const value = (parsedEvent.args[2] as BigNumber).toBigInt();
+                        addChange(parsedEvent.args[0] as string, parentNode.to, -value);
+                        addChange(parsedEvent.args[1] as string, parentNode.to, value);
+                    } catch (e) {
+                        console.error('failed to process value change', e);
+                    }
+                } else if (traceLog.topics[0] === '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65') {
+                    const [parentNode] = findAffectedContract(traceMetadata, traceLog);
 
-                    const value = (parsedEvent.args[2] as BigNumber).toBigInt();
-                    addChange(parsedEvent.args[0] as string, parentNode.to, -value);
-                    addChange(parsedEvent.args[1] as string, parentNode.to, value);
-                } catch (e) {
-                    console.error('failed to process value change', e);
+                    try {
+                        const parsedEvent = traceMetadata.abis[node.to][node.codehash].parseLog({
+                            topics: traceLog.topics,
+                            data: traceLog.data,
+                        });
+
+                        const value = (parsedEvent.args[1] as BigNumber).toBigInt();
+                        addChange(parsedEvent.args[0] as string, parentNode.to, -value);
+                    } catch (e) {
+                        console.error('failed to process value change', e);
+                    }
                 }
             });
 

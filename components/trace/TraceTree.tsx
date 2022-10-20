@@ -280,6 +280,7 @@ export const TraceTree = (props: TraceTreeProps) => {
                                                             </>
                                                         ),
                                                         typeName: structInfo.typeName,
+                                                        bits: structInfo.bits,
                                                     };
                                                 }
                                             } else if (paramType.type === 'contract') {
@@ -353,6 +354,7 @@ export const TraceTree = (props: TraceTreeProps) => {
                                                                     </>
                                                                 ),
                                                                 typeName: structInfo.typeName,
+                                                                bits: structInfo.bits,
                                                             };
                                                         }
                                                     } else if (paramType.type === 'contract') {
