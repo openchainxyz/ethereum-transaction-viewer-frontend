@@ -1,17 +1,17 @@
 import * as React from 'react';
-import { ThemeProvider, Typography } from '@mui/material';
-import { Result, TraceMetadata } from '../../components/types';
-import { theme } from '../../components/helpers';
-import { precompiles } from '../../components/precompiles';
-import { ethers } from 'ethers';
+import {ThemeProvider, Typography} from '@mui/material';
+import {Result, TraceMetadata} from '../../components/types';
+import {theme} from '../../components/helpers';
+import {precompiles} from '../../components/precompiles';
+import {ethers} from 'ethers';
 import styles from '../../styles/Home.module.css';
-import { useRouter } from 'next/router';
-import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
-import { TransactionInfo } from '../../components/transaction-info/TransactionInfo';
-import { DecodeTree } from '../../components/decoder/DecodeTree';
-import { ChainConfig, ChainConfigContext, defaultChainConfig, getChain } from '../../components/Chains';
+import {useRouter} from 'next/router';
+import {BaseProvider, JsonRpcProvider} from '@ethersproject/providers';
+import {TransactionInfo} from '../../components/transaction-info/TransactionInfo';
+import {DecodeTree} from '../../components/decoder/DecodeTree';
+import {ChainConfig, ChainConfigContext, defaultChainConfig, getChain} from '../../components/Chains';
 import Home from '../index';
-import { ValueChange } from '../../components/value-change/ValueChange';
+import {ValueChange} from '../../components/value-change/ValueChange';
 import {
     defaultPriceMetadata,
     fetchDefiLlamaPrices,
@@ -24,16 +24,17 @@ import {
     TokenMetadata,
     TokenMetadataContext,
 } from '../../components/metadata/tokens';
-import { TraceTree } from '../../components/trace/TraceTree';
-import { defaultLabelMetadata, LabelMetadata, LabelMetadataContext } from '../../components/metadata/labels';
-import { TransactionMetadata, TransactionMetadataContext } from '../../components/metadata/transaction';
-import { doApiRequest, TraceEntry, TraceResponse } from '../../components/api';
+import {TraceTree} from '../../components/trace/TraceTree';
+import {defaultLabelMetadata, LabelMetadata, LabelMetadataContext} from '../../components/metadata/labels';
+import {TransactionMetadata, TransactionMetadataContext} from '../../components/metadata/transaction';
+import {doApiRequest, TraceEntry, TraceResponse} from '../../components/api';
+import {defaultPreimageMetadata, PreimageMetadata, PreimageMetadataContext} from "../../components/metadata/preimages";
 
 export default function TransactionViewer() {
     console.log('rendering main view');
 
     const router = useRouter();
-    const { chain, txhash } = router.query;
+    const {chain, txhash} = router.query;
 
     const [chainConfig, setChainConfig] = React.useState<ChainConfig>(defaultChainConfig());
     const [provider, setProvider] = React.useState<BaseProvider>();
@@ -42,6 +43,7 @@ export default function TransactionViewer() {
 
     const [traceResponse, setTraceResponse] = React.useState<Result<TraceResponse>>();
 
+    const [preimageMetadata, setPreimageMetadata] = React.useState<PreimageMetadata>(defaultPreimageMetadata());
     const [labelMetadata, setLabelMetadata] = React.useState<LabelMetadata>(defaultLabelMetadata());
     const [priceMetadata, setPriceMetadata] = React.useState<PriceMetadata>(defaultPriceMetadata());
     const [tokenMetadata, setTokenMetadata] = React.useState<TokenMetadata>(defaultTokenMetadata());
@@ -68,6 +70,10 @@ export default function TransactionViewer() {
         setPriceMetadata({
             ...defaultPriceMetadata(),
             updater: setPriceMetadata,
+        });
+        setPreimageMetadata({
+            ...defaultPreimageMetadata(),
+            updater: setPreimageMetadata,
         });
         setTraceResult(undefined);
         setTransactionMetadata(undefined);
@@ -106,7 +112,8 @@ export default function TransactionViewer() {
                 let customLabels: Record<string, Record<string, string>> = {};
                 try {
                     customLabels = JSON.parse(localStorage.getItem('pref:labels') || '{}');
-                } catch {}
+                } catch {
+                }
                 if (!(chain in customLabels)) {
                     customLabels[chain] = {};
                 }
@@ -195,7 +202,7 @@ export default function TransactionViewer() {
                     <ChainConfigContext.Provider value={chainConfig}>
                         <LabelMetadataContext.Provider value={labelMetadata}>
                             <PriceMetadataContext.Provider value={priceMetadata}>
-                                <TransactionInfo />
+                                <TransactionInfo/>
                             </PriceMetadataContext.Provider>
                         </LabelMetadataContext.Provider>
                     </ChainConfigContext.Provider>
@@ -261,7 +268,9 @@ export default function TransactionViewer() {
         traceTree = (
             <ChainConfigContext.Provider value={chainConfig}>
                 <LabelMetadataContext.Provider value={labelMetadata}>
-                    <TraceTree traceResult={traceResult} traceMetadata={traceMetadata} />
+                    <PreimageMetadataContext.Provider value={preimageMetadata}>
+                        <TraceTree traceResult={traceResult} traceMetadata={traceMetadata}/>
+                    </PreimageMetadataContext.Provider>
                 </LabelMetadataContext.Provider>
             </ChainConfigContext.Provider>
         );
@@ -270,7 +279,7 @@ export default function TransactionViewer() {
     return (
         <ThemeProvider theme={theme}>
             <div className={styles.container}>
-                <Home />
+                <Home/>
 
                 <Typography variant={'h6'} className="dark:invert">
                     Transaction Info

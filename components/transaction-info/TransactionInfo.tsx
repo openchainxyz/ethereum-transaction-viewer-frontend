@@ -131,7 +131,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
     let transactionValue = transactionMetadata.transaction.value.toBigInt();
     let transactionFee =
         transactionMetadata.receipt.gasUsed.toBigInt() *
-        (transactionMetadata.receipt.effectiveGasPrice.toBigInt() ||
+        (transactionMetadata.receipt.effectiveGasPrice?.toBigInt() ||
             transactionMetadata.transaction.gasPrice?.toBigInt());
 
     let transactionValueStr = formatUnitsSmartly(transactionValue, chainConfig.nativeSymbol);

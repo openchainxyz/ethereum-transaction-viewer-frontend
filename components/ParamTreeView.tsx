@@ -41,7 +41,7 @@ export const ParamTreeView = (props: ParamTreeViewProps) => {
                 label = (
                     <>
                         {paramName}:&nbsp;
-                        <DataRenderer decodedData={value} preferredType={param.format()}></DataRenderer>
+                        <DataRenderer decodedData={value} preferredType={param}></DataRenderer>
                     </>
                 );
                 children = [];

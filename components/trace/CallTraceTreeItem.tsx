@@ -20,6 +20,7 @@ import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
 import { getChain } from '../Chains';
 import { TraceEntryCall, TraceEntryLog, TraceEntrySload, TraceEntrySstore, TraceResponse } from '../api';
+import {guessFragment} from "../calldata-guesser/guess";
 
 const callColor = {
     call: '#2c2421',
@@ -55,7 +56,12 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
                 } catch (e) {}
             }
 
-            return null;
+            try {
+                return guessFragment(node.input);
+            } catch (e) {
+                console.log("failed to guess fragment", e)
+                return null;
+            }
         })(),
         `function func_${node.input.substring(2, 10).padEnd(8, '0')}()`,
     );

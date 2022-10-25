@@ -6,8 +6,9 @@ import { SpanIconButton } from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { ChainConfig, ChainConfigContext, getChain } from './Chains';
 import { LabelMetadataContext } from './metadata/labels';
-import { Button, IconButton, Tooltip } from '@mui/material';
+import {Button, IconButton, styled, Tooltip, tooltipClasses, TooltipProps} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import {PreimageMetadataContext} from "./metadata/preimages";
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
     if (paramType.indexed && value.hash) {
@@ -68,9 +69,18 @@ type DataRendererProps = {
     truncate?: boolean;
 };
 
+const NoMaxWidthTooltip = styled(({ className, ...props }: TooltipProps) => (
+    <Tooltip {...props} classes={{ popper: className }} />
+))({
+    [`& .${tooltipClasses.tooltip}`]: {
+        maxWidth: 'none',
+    },
+});
+
 export const DataRenderer = (props: DataRendererProps) => {
     const chainConfig = useContext(ChainConfigContext);
     const labelMetadata = useContext(LabelMetadataContext);
+    const preimageMetadata = useContext(PreimageMetadataContext);
 
     const abiCoder = ethers.utils.defaultAbiCoder;
 
@@ -117,6 +127,17 @@ export const DataRenderer = (props: DataRendererProps) => {
     try {
         if (decodedData === undefined && data) {
             decodedData = abiCoder.decode([paramType], data);
+        }
+
+        let hasPreimage = false;
+        let wasIndexed = false;
+        console.log(paramType, decodedData, preimageMetadata.preimages);
+        const want = paramType.indexed && paramType.baseType !== 'bytes32' ? decodedData.hash : decodedData;
+        if ((paramType.type === 'bytes32' || paramType.indexed) && preimageMetadata.preimages[want] !== undefined) {
+            decodedData = preimageMetadata.preimages[want];
+            hasPreimage = true;
+            wasIndexed = paramType.type !== 'bytes32' && paramType.indexed;
+            paramType = ParamType.from('bytes');
         }
 
         let stringified = stringifyValue(paramType, decodedData);
@@ -194,7 +215,21 @@ export const DataRenderer = (props: DataRendererProps) => {
                     {rendered}
                 </Tooltip>
             );
+        } else if (paramType.baseType === 'bytes' && hasPreimage && !wasIndexed) {
+            rendered = (
+                <NoMaxWidthTooltip
+                    arrow
+                    placement={'top'}
+                    title={
+                        <span>{ethers.utils.keccak256(decodedData)}</span>
+                    }
+                >
+                    <span>keccak256({rendered})</span>
+                </NoMaxWidthTooltip>
+            );
         }
+
+        console.log(paramType, decodedData, rendered);
 
         return (
             <>

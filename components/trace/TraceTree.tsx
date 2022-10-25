@@ -23,6 +23,7 @@ import {
     TraceEntrySstore,
     TraceResponse,
 } from '../api';
+import {PreimageMetadataContext} from "../metadata/preimages";
 
 type TraceTreeProps = {
     traceResult: TraceResponse;
@@ -40,6 +41,7 @@ export const TraceTree = (props: TraceTreeProps) => {
     console.time('render trace tree');
     const { traceResult, traceMetadata } = props;
 
+    const preimageMetadata = React.useContext(PreimageMetadataContext);
     const [storageMetadata, setStorageMetadata] = React.useState<StorageMetadata>(defaultStorageMetadata());
     const [showStorageChanges, setShowStorageChanges] = React.useState<Set<string>>(new Set());
     const [expanded, setExpanded] = React.useState<string[]>([]);
@@ -85,12 +87,21 @@ export const TraceTree = (props: TraceTreeProps) => {
             defaultExpanded = defaultExpanded.filter((v) => v.split('.').length <= maxLength);
             maxLength--;
         }
+        
+        const preimages = {
+            ...traceResult.preimages,
+        };
 
         // first, augment our preimages by hashing each potential storage slot
         // this is because solidity inlines the offset at which a dynamic array will be placed
         // so we don't know what it is from the trace
         allStorageOps.forEach((node) => {
-            traceResult.preimages[ethers.utils.keccak256(node.slot)] = node.slot;
+            preimages[ethers.utils.keccak256(node.slot)] = node.slot;
+        });
+
+        preimageMetadata.updater({
+            ...preimageMetadata,
+            preimages: preimages,
         });
 
         let newStorageMetadata: StorageMetadata = {
@@ -125,7 +136,7 @@ export const TraceTree = (props: TraceTreeProps) => {
         let max = new BN(2 ** 32);
 
         let preimageSlotCache = {} as Record<string, BN>;
-        Object.keys(traceResult.preimages).forEach((hash) => {
+        Object.keys(preimages).forEach((hash) => {
             preimageSlotCache[hash] = new BN(hash.substring(2), 16);
         });
         console.log('warmed cache');
@@ -135,10 +146,10 @@ export const TraceTree = (props: TraceTreeProps) => {
             let [parentNode] = findAffectedContract(traceMetadata, node);
 
             while (true) {
-                let preimage = traceResult.preimages[slot];
+                let preimage = preimages[slot];
                 let preimageOffset = 0;
                 if (!preimage) {
-                    let potentialPreimages = Object.keys(traceResult.preimages)
+                    let potentialPreimages = Object.keys(preimages)
                         .filter((hash) => {
                             if (!preimageSlotCache.hasOwnProperty(slot)) {
                                 preimageSlotCache[slot] = new BN(slot.substring(2), 16);
@@ -149,7 +160,7 @@ export const TraceTree = (props: TraceTreeProps) => {
                         .map((hash) => {
                             return {
                                 hash: hash,
-                                preimage: traceResult.preimages[hash],
+                                preimage: preimages[hash],
                                 offset: preimageSlotCache[slot].sub(preimageSlotCache[hash]).toNumber(),
                             };
                         });

@@ -115,7 +115,7 @@ export const LogTraceTreeItem = (props: LogTraceTreeItemProps) => {
                     Event Topics: <br />
                     <List dense={true}>
                         {node.topics.map((v, i) => (
-                            <ListItem key={i} dense={true}>
+                            <ListItem key={i} dense={true} sx={{paddingTop: '0px', paddingBottom: '0px'}}>
                                 {v}
                             </ListItem>
                         ))}
