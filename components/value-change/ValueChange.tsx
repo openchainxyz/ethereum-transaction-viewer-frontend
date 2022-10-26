@@ -6,7 +6,7 @@ import React, { useContext } from 'react';
 import { SpanIconButton } from '../SpanIconButton';
 import { BigNumber, ethers } from 'ethers';
 import { NATIVE_TOKEN } from '../decoder/actions';
-import {findAffectedContract, formatUsd} from '../helpers';
+import { findAffectedContract, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { ChainConfigContext } from '../Chains';
 import { fetchDefiLlamaPrices, getPriceOfToken, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
@@ -188,7 +188,9 @@ const computeBalanceChanges = (
                     } catch (e) {
                         console.error('failed to process value change', e);
                     }
-                } else if (traceLog.topics[0] === '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65') {
+                } else if (
+                    traceLog.topics[0] === '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65'
+                ) {
                     const [parentNode] = findAffectedContract(traceMetadata, traceLog);
 
                     try {
@@ -238,7 +240,10 @@ export const ValueChange = (props: ValueChangeProps) => {
 
     fetchDefiLlamaPrices(
         priceMetadata.updater,
-        Array.from(allTokens).map((token) => `${chainConfig.defillamaPrefix}:${token}`),
+        Array.from(allTokens).map((token) => {
+            const tokenAddress = token === NATIVE_TOKEN ? ethers.constants.AddressZero : token;
+            return `${chainConfig.defillamaPrefix}:${tokenAddress}`;
+        }),
         transactionMetadata.block.timestamp,
     );
     fetchTokenMetadata(tokenMetadata.updater, provider, Array.from(allTokens));
