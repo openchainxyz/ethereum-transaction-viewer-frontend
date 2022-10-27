@@ -23,6 +23,16 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://etherscan.io',
     },
     {
+        id: 'goerli',
+        displayName: 'Görli Testnet',
+        nativeTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        nativeSymbol: 'ETH',
+        coingeckoId: 'coingecko:ethereum',
+        defillamaPrefix: 'ethereum',
+        rpcUrl: 'https://rpc.ankr.com/eth_goerli',
+        blockexplorerUrl: 'https://goerli.etherscan.io',
+    },
+    {
         id: 'polygon',
         displayName: 'Polygon Mainnet',
         nativeTokenAddress: '0x0eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
