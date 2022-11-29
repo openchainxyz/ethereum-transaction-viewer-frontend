@@ -1,4 +1,6 @@
 import React from 'react';
+import { json } from 'stream/consumers';
+import { isPrefixUnaryExpression } from 'typescript';
 
 export type ChainConfig = {
     id: string;
@@ -84,7 +86,31 @@ export const SupportedChains = [
     },
 ];
 
-export const getChain = (id: string): ChainConfig | undefined => {
+const conduitAPIs: {[key: string] : string} =  {
+    "conduit" : "https://api.exfac.xyz/txTracer/chainConfig/",
+    "conduit-staging" : "https://api.staging.exfac.xyz/txTracer/chainConfig/",
+    "conduit-localhost" : "http://localhost:8080/txTracer/chainConfig/"
+}
+
+export const getChain = async (id: string): Promise<ChainConfig | undefined>=> {
+    if (id.startsWith("conduit:") || id.startsWith("conduit-staging:") || id.startsWith("conduit-localhost:")  ) {
+        const tokens = id.split(":");
+        if (tokens.length != 2) {
+            return undefined
+        }
+
+        const prefix = tokens[0]
+        const slug = tokens[1]
+
+        try {
+            let resp = await fetch(conduitAPIs[prefix] + slug);
+            let json = await resp.json();
+            return json as ChainConfig
+        } catch (error) {
+            console.log(error)
+        }
+        return undefined
+    }
     return SupportedChains.find((chain) => chain.id === id);
 };
 

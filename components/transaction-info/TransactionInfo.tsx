@@ -8,7 +8,7 @@ import { formatUnitsSmartly, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { ChainConfigContext } from '../Chains';
 import { PriceMetadataContext } from '../metadata/prices';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { TransactionMetadataContext } from '../metadata/transaction';
 
 type TransactionAttributeGridProps = {
@@ -107,6 +107,10 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
             </>
         );
     } else {
+        if (!transactionMetadata.transaction.gasPrice) {
+            transactionMetadata.transaction.gasPrice = BigNumber.from("0");
+        }
+        
         gasPriceInfo = (
             <>
                 <TransactionAttribute name={'Gas Price'}>
