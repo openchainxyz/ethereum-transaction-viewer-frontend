@@ -51,13 +51,14 @@ export default function TransactionViewer() {
     const [traceResult, setTraceResult] = React.useState<TraceResponse>();
     const [traceMetadata, setTraceMetadata] = React.useState<TraceMetadata>();
 
-    React.useMemo(() => {
+    React.useMemo(async() => {
         if (!chain || Array.isArray(chain)) return;
         if (!txhash || Array.isArray(txhash)) return;
 
-        const chainConfig = getChain(chain);
+        const chainConfig = await getChain(chain);
         if (!chainConfig) return;
 
+        console.log(chainConfig)
         setChainConfig(chainConfig);
 
         const provider = new JsonRpcProvider(chainConfig.rpcUrl);
