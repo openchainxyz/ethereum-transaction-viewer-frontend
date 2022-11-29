@@ -1,8 +1,8 @@
-import { ChainConfig, getChain, SupportedChains } from '../Chains';
-import { BaseProvider, JsonRpcBatchProvider } from '@ethersproject/providers';
-import React from 'react';
-import { ethers } from 'ethers';
 import { defaultAbiCoder, ParamType } from '@ethersproject/abi';
+import { BaseProvider } from '@ethersproject/providers';
+import { ethers } from 'ethers';
+import React from 'react';
+import { SupportedChains } from '../Chains';
 import { NATIVE_TOKEN } from '../decoder/actions';
 
 export type TokenInfo = {

@@ -1,14 +1,12 @@
 import { ParamType } from '@ethersproject/abi/lib';
-import { BigNumber, ethers } from 'ethers';
-import * as React from 'react';
-import { useContext } from 'react';
-import { SpanIconButton } from './SpanIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { ChainConfig, ChainConfigContext, getChain } from './Chains';
+import { styled, Tooltip, tooltipClasses, TooltipProps } from '@mui/material';
+import { BigNumber, ethers } from 'ethers';
+import { useContext } from 'react';
+import { ChainConfig, ChainConfigContext } from './Chains';
 import { LabelMetadataContext } from './metadata/labels';
-import {Button, IconButton, styled, Tooltip, tooltipClasses, TooltipProps} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import {PreimageMetadataContext} from "./metadata/preimages";
+import { PreimageMetadataContext } from "./metadata/preimages";
+import { SpanIconButton } from './SpanIconButton';
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
     if (paramType.indexed && value.hash) {

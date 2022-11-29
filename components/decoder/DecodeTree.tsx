@@ -58,7 +58,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                     nodeId={id}
                     treeContent={format(v, {
                         timestamp: transactionMetadata.block.timestamp,
-                        chain: chainConfig.id,
+                        chain: chainConfig,
                         prices: priceMetadata,
                         tokens: tokenMetadata,
                     })}

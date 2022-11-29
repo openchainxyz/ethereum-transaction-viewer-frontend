@@ -1,17 +1,17 @@
-import { BigNumber, BigNumberish, BytesLike, ethers } from 'ethers';
-import { DataRenderer } from '../DataRenderer';
-import * as React from 'react';
-import { Tooltip } from '@mui/material';
-import { formatUsd } from '../helpers';
-import { getChain } from '../Chains';
-import {LogDescription, ParamType} from 'ethers/lib/utils';
-import WithSeparator from 'react-with-separator';
-import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
 import { defaultAbiCoder, EventFragment, FunctionFragment, Result } from '@ethersproject/abi/lib';
 import { Log } from '@ethersproject/abstract-provider';
-import { NATIVE_TOKEN } from './actions';
+import { Tooltip } from '@mui/material';
+import { BigNumber, BigNumberish, BytesLike, ethers } from 'ethers';
+import { LogDescription, ParamType } from 'ethers/lib/utils';
+import * as React from 'react';
+import WithSeparator from 'react-with-separator';
+import { ChainConfig } from '../Chains';
+import { DataRenderer } from '../DataRenderer';
+import { formatUsd } from '../helpers';
 import { PriceMetadata } from '../metadata/prices';
 import { TokenMetadata } from '../metadata/tokens';
+import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
+import { NATIVE_TOKEN } from './actions';
 
 export const hasSelector = (calldata: BytesLike, selector: string | FunctionFragment) => {
     return (
@@ -180,7 +180,7 @@ export class DecoderState {
 
 export type DecodeFormatOpts = {
     timestamp: number;
-    chain: string;
+    chain: ChainConfig;
     prices: PriceMetadata;
     tokens: TokenMetadata;
 };
@@ -223,11 +223,11 @@ export abstract class Decoder<T extends BaseAction> {
     formatTokenAmount(opts: DecodeFormatOpts, token: string, amount: BigNumberish): JSX.Element {
         token = token.toLowerCase();
         if (token === NATIVE_TOKEN) {
-            token = getChain(opts.chain)?.nativeTokenAddress || '';
+            token = opts.chain.nativeTokenAddress || '';
         }
 
         let amountFormatted = amount.toString();
-        let address = <DataRenderer chain={opts.chain} preferredType={'address'} data={token} />;
+        let address = <DataRenderer preferredType={'address'} data={token} />;
         let price;
 
         let tokenInfo = opts.tokens.tokens[token];
@@ -238,7 +238,6 @@ export abstract class Decoder<T extends BaseAction> {
             if (tokenInfo.symbol !== undefined) {
                 address = (
                     <DataRenderer
-                        chain={opts.chain}
                         labels={{ [token]: tokenInfo.symbol }}
                         preferredType={'address'}
                         data={token}

@@ -1,26 +1,27 @@
-import { StorageMetadata, TraceEntryCallable, TraceMetadata } from '../types';
-import * as React from 'react';
 import { defaultAbiCoder, ParamType, Result } from '@ethersproject/abi';
-import { precompiles } from '../precompiles';
-import { BigNumber, ethers } from 'ethers';
-import { ParamFlatView } from '../ParamFlatView';
-import { ParamTreeView } from '../ParamTreeView';
-import { DataRenderer } from '../DataRenderer';
-import { Grid, Typography } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { Grid } from '@mui/material';
+import { BigNumber, ethers } from 'ethers';
 import { formatEther } from 'ethers/lib/utils';
-import { TraceTreeItem, TraceTreeNodeLabel } from './TraceTreeItem';
-import { TraceTreeDialog } from './TraceTreeDialog';
-import { BuiltinErrors, findAffectedContract } from '../helpers';
-import { LogTraceTreeItem } from './LogTraceTreeItem';
-import { SpanIconButton } from '../SpanIconButton';
-import { useErrorFragment, useFunctionFragment } from '../hooks/useFragment';
+import * as React from 'react';
+import { useContext } from 'react';
+import { TraceEntryCall, TraceEntryLog, TraceEntrySload, TraceEntrySstore, TraceResponse } from '../api';
+import { guessFragment } from "../calldata-guesser/guess";
+import { ChainConfigContext } from '../Chains';
+import { DataRenderer } from '../DataRenderer';
 import { EncodedABITextField } from '../EncodedABITextField';
 import { FragmentTextField } from '../FragmentTextField';
-import { getChain } from '../Chains';
-import { TraceEntryCall, TraceEntryLog, TraceEntrySload, TraceEntrySstore, TraceResponse } from '../api';
-import {guessFragment} from "../calldata-guesser/guess";
+import { BuiltinErrors, findAffectedContract } from '../helpers';
+import { useErrorFragment, useFunctionFragment } from '../hooks/useFragment';
+import { ParamFlatView } from '../ParamFlatView';
+import { ParamTreeView } from '../ParamTreeView';
+import { precompiles } from '../precompiles';
+import { SpanIconButton } from '../SpanIconButton';
+import { StorageMetadata, TraceEntryCallable, TraceMetadata } from '../types';
+import { LogTraceTreeItem } from './LogTraceTreeItem';
+import { TraceTreeDialog } from './TraceTreeDialog';
+import { TraceTreeItem, TraceTreeNodeLabel } from './TraceTreeItem';
 
 const callColor = {
     call: '#2c2421',
@@ -45,6 +46,8 @@ type CallTraceTreeItemProps = {
 
 export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     const { traceResult, traceMetadata, node, showStorageChanges, setShowStorageChanges, children } = props;
+    
+    const chainConfig = useContext(ChainConfigContext);
 
     const [functionFragment, setFunctionFragment, parsedFunctionFragment] = useFunctionFragment(
         (() => {
@@ -322,7 +325,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     if (value.gt(0)) {
         valueNode = (
             <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${
-                getChain(traceResult.chain)?.nativeSymbol
+                chainConfig.nativeSymbol
             }]`}</span>
         );
     }

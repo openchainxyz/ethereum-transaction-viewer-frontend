@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ChainConfig, getChain } from '../Chains';
+import { ChainConfig } from '../Chains';
 import { NATIVE_TOKEN } from '../decoder/actions';
 
 type CoinInfo = {

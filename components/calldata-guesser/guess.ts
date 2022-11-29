@@ -1,6 +1,6 @@
-import {BytesLike, ethers} from "ethers";
-import {FunctionFragment} from "@ethersproject/abi/lib";
-import {defaultAbiCoder, ParamType} from "@ethersproject/abi";
+import { BytesLike, ethers } from "ethers";
+import { FunctionFragment } from "@ethersproject/abi/lib";
+import { defaultAbiCoder, ParamType } from "@ethersproject/abi";
 
 const isSafeBigInt = (val: bigint) => {
     return val < BigInt(Number.MAX_SAFE_INTEGER);
@@ -115,7 +115,7 @@ const decodeWellFormedTuple = (depth: number, bytes: Uint8Array, paramIdx: numbe
             debug(`dynamic param ${dynamicParamIdx} is ${dynamicDataStart} -> ${dynamicDataEnd} (${dynamicData.length} bytes, ${maybeDynamicElementLen} elements)`)
 
             if (maybeDynamicElementLen !== null) {
-                debug("could be tuple or string")
+                debug(`could be tuple or string`)
 
                 // can't do this yet because the consistency checker doesn't handle it properly
                 // if (maybeDynamicElementLen === 0 && dynamicData.length === 0) {
@@ -126,10 +126,11 @@ const decodeWellFormedTuple = (depth: number, bytes: Uint8Array, paramIdx: numbe
                 // we're either decoding a bytes, or a dynamic array of a known size
                 // we can disambiguate between the two by making use of the fact that if the encoded
                 // data is not a bytes, then it must be at least 32 bytes per element
-                const lastWord = Math.floor(maybeDynamicElementLen /  32) * 32;
+                const lastWord = Math.floor(maybeDynamicElementLen / 32) * 32;
+                debug(`lhs=${countTrailingZeros(dynamicData.slice(lastWord, lastWord + 32))} rhs=${32 - (maybeDynamicElementLen % 32)}`);
                 if (
                     (maybeDynamicElementLen === 0 && dynamicData.length === 0) ||
-                    (maybeDynamicElementLen > 0 && ((maybeDynamicElementLen % 32 === 0 && (isTrailingDynamicParam || maybeDynamicElementLen == dynamicData.length)) || countTrailingZeros(dynamicData.slice(lastWord, lastWord + 32)) === 32 - (maybeDynamicElementLen % 32)))
+                    (maybeDynamicElementLen > 0 && ((maybeDynamicElementLen % 32 === 0 && (isTrailingDynamicParam || maybeDynamicElementLen == dynamicData.length)) || countTrailingZeros(dynamicData.slice(lastWord, lastWord + 32)) >= 32 - (maybeDynamicElementLen % 32)))
                 ) {
                     return ParamType.from("bytes");
                 } else {
@@ -243,7 +244,7 @@ const decodeWellFormedTuple = (depth: number, bytes: Uint8Array, paramIdx: numbe
             if (maybeDynamicElementLen !== null) {
                 // if we have a length, we need to chunk the inputs manually
                 if (inputs.length % maybeDynamicElementLen !== 0) {
-                    debug("got uneven results");
+                    debug(`got uneven results: ${inputs.length} ${maybeDynamicElementLen}`);
                     return undefined;
                 }
 
@@ -395,7 +396,7 @@ const wellFormedParse = (sig: Uint8Array, bytes: Uint8Array): FunctionFragment |
                 const leadingZeros = countLeadingZeros(ethers.utils.arrayify(val));
                 const trailingZeros = countTrailingZeros(ethers.utils.arrayify(val));
 
-                if (leadingZeros >= 12 && leadingZeros <= 16) {
+                if (leadingZeros >= 12 && leadingZeros <= 17) {
                     // it's probably very hard to mine more leading zeros than that
                     return ParamType.from('address');
                 } else if (leadingZeros > 16) {
