@@ -7,6 +7,9 @@ export class SwapFormatter extends Formatter<SwapAction> {
         const keys = [];
         const values = [];
 
+        keys.push('exchange');
+        values.push(result.exchange);
+
         if (result.amountIn !== undefined) {
             keys.push('tokenIn');
             values.push(this.formatTokenAmount(opts, result.tokenIn, result.amountIn));

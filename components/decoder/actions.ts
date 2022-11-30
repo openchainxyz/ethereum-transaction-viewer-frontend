@@ -21,6 +21,8 @@ export interface TransferAction {
 export type SwapAction = {
     type: 'swap';
 
+    exchange: string;
+    
     operator: string;
 
     recipient: string;
