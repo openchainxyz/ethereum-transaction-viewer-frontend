@@ -1,4 +1,4 @@
-import { decode, format } from '../decoder';
+import { decode } from '../decoder';
 import TreeView from '@mui/lab/TreeView';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -19,6 +19,7 @@ import { findAffectedContract } from '../../helpers';
 import * as ethers from 'ethers';
 import { Interface } from '@ethersproject/abi';
 import { BigNumber } from 'ethers';
+import { format } from './formatter';
 
 export type DecodeTreeProps = {
     provider: BaseProvider;

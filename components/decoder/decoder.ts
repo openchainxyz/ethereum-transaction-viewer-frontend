@@ -104,7 +104,3 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
 
     return [await visit(input), state.requestedMetadata];
 };
-
-export const format = (result: BaseAction, opts: DecodeFormatOpts): JSX.Element => {
-    return allDecoders[result.type].format(result, opts);
-};
