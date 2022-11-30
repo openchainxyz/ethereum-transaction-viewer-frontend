@@ -1,31 +1,38 @@
 import { Log } from '@ethersproject/abstract-provider';
+import { Action } from './actions';
 import { ENSDecoder } from './ens';
 import { TransferDecoder } from './fallback';
 import {
-    BaseAction,
-    DecodeFormatOpts,
     Decoder,
     DecoderChainAccess,
     DecoderInput,
     DecoderOutput,
     DecoderState,
+    hasReceiptExt,
+    hasTraceExt,
     MetadataRequest
 } from './types';
 import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswap';
+<<<<<<< HEAD
 import { CometSupplyDecoder } from './comet';
+=======
+import { WrappedNativeTokenDecoder } from './wrapped';
+>>>>>>> asdf
 
-const allDecoders: Record<string, Decoder<BaseAction>> = {};
-const allDecodersArray: Decoder<BaseAction>[] = [];
+const allDecodersArray: Decoder<any>[] = [];
 
-export const registerDecoder = (decoder: Decoder<BaseAction>) => {
+export const registerDecoder = (decoder: Decoder<any>) => {
     allDecodersArray.push(decoder);
-    allDecoders[decoder.name] = decoder;
 };
 
 registerDecoder(new UniswapV2RouterSwapDecoder());
 registerDecoder(new UniswapV2PairSwapDecoder());
 registerDecoder(new ENSDecoder());
+<<<<<<< HEAD
 registerDecoder(new CometSupplyDecoder());
+=======
+registerDecoder(new WrappedNativeTokenDecoder());
+>>>>>>> asdf
 
 // must come last!
 registerDecoder(new TransferDecoder());
@@ -34,7 +41,7 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
     const state = new DecoderState(input, access);
 
     const visit = async (node: DecoderInput): Promise<DecoderOutput> => {
-        if (node.failed) {
+        if (hasReceiptExt(node) && node.failed) {
             // we don't decode anything that failed, because there should be no reason
             // to care about something that had no effect
             return state.getOutputFor(node);
@@ -54,7 +61,7 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
                         output.results.push(results);
                     }
                 } catch (e) {
-                    console.log('decoder failed to decode log', v.name, node, log, e);
+                    console.log('decoder failed to decode log', v, node, log, e);
                 }
             }));
 
@@ -63,20 +70,18 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
 
         const output = state.getOutputFor(node);
 
-        let results = (await Promise.all(allDecodersArray
-            .map(async (v) => {
-                try {
-                    return await v.decodeCall(state, node);
-                } catch (e) {
-                    console.log('decoder failed to decode call', v.name, node, e);
+        for (const decoder of allDecodersArray) {
+            try {
+                const result = await decoder.decodeCall(state, node);
+                if (result) {
+                    output.results.push(result);
                 }
-            })))
-            .filter((v): v is BaseAction | BaseAction[] => v !== null)
-            .flatMap((v) => v);
+            } catch (e) {
+                console.log('decoder failed to decode call', decoder, node, e);
+            }
+        }
 
-        output.results.push(...results);
-
-        if (node.childOrder) {
+        if (hasTraceExt(node)) {
             for (let child of node.childOrder) {
                 let result;
                 if (child[0] === 'log') {
@@ -88,12 +93,7 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
                 output.children.push(result);
 
             }
-        } else {
-            if (node.children) {
-                for (let child of node.children) {
-                    output.children.push(await visit(child));
-                }
-            }
+        } else if (hasReceiptExt(node)) {
             if (node.logs) {
                 for (let log of node.logs) {
                     output.children.push(await decodeLog(node, log));

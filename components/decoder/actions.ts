@@ -60,5 +60,28 @@ export type SupplyAction = {
     amount: BigNumber;
 }
 
+export type WrapNativeTokenAction = {
+    type: 'wrap-native-token';
 
-export type Action = TransferAction | SwapAction | ENSRegisterAction;
+    token: string;
+
+    operator: string;
+    amount: bigint;
+};
+
+export type UnwrapNativeTokenAction = {
+    type: 'unwrap-native-token';
+
+    token: string;
+
+    operator: string;
+    amount: bigint;
+};
+
+export type Action =
+    TransferAction |
+    SwapAction |
+    ENSRegisterAction |
+    WrapNativeTokenAction |
+    UnwrapNativeTokenAction |
+    SupplyAction;
