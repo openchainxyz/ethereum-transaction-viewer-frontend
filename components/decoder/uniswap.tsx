@@ -329,6 +329,8 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
     }
 }
 
+const swapEventSignature = 'event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)';
+
 export class UniswapV2PairSwapDecoder extends CallDecoder<SwapAction> {
     constructor() {
         super('uniswap-v2-pair');
@@ -369,15 +371,51 @@ export class UniswapV2PairSwapDecoder extends CallDecoder<SwapAction> {
             state.consumeTransfer(node.children[0]);
         }
 
-        const amount0Out = inputs['amount0Out'];
-        const amount1Out = inputs['amount1Out'];
+        const reversedDecode = Array.from(state.decodeOrder).reverse();
+        for (let result of reversedDecode) {
+            const newResults = result.results.filter(action => {
+                return action.type !== 'erc20' || (action.to.toLocaleLowerCase() !== node.to.toLocaleLowerCase());
+            });
+            result.results = newResults;
+        }
+
+        state.decoded.get(state.root)
+
+        let tokenIn = token0;
+        let tokenOut = token1;
+        let amountIn;
+        let amountOut;
+
+        if (node.logs) {
+            const swapEvent = this.decodeEventWithFragment(node.logs[node.logs.length - 1], swapEventSignature);
+
+            if (swapEvent.args['amount0In'].toBigInt() && !swapEvent.args['amount1In'].toBigInt()) {
+                console.log("used branch a")
+                tokenIn = token0;
+                tokenOut = token1;
+                amountIn = swapEvent.args['amount0In'];
+                amountOut = swapEvent.args['amount1Out'];
+            } else {
+                console.log("used branch b", swapEvent.args)
+                tokenIn = token1;
+                tokenOut = token0;
+                amountIn = swapEvent.args['amount1In'];
+                amountOut = swapEvent.args['amount0Out'];
+            }
+        } else {
+            console.log("node has no logs?")
+        }
+
+        console.log('decoded swap???', tokenIn, tokenOut, amountIn, amountOut);
 
         const action: SwapAction = {
             type: this.name,
             operator: node.from,
             recipient: inputs['to'],
-            tokenIn: token0,
-            tokenOut: token1,
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            amountIn: amountIn,
+            amountOut: amountOut,
         };
 
         return action;

@@ -85,14 +85,18 @@ export class DecoderState {
 
     consumed: Set<string>;
 
+    root: DecoderInput;
     decoded: Map<DecoderInput | Log, DecoderOutput>;
+    decodeOrder: DecoderOutput[];
 
     requestedMetadata: MetadataRequest;
 
-    constructor(access: DecoderChainAccess) {
+    constructor(root: DecoderInput, access: DecoderChainAccess) {
+        this.root = root;
         this.access = access;
         this.consumed = new Set<string>();
         this.decoded = new Map<DecoderInput, DecoderOutput>();
+        this.decodeOrder = [];
         this.requestedMetadata = {
             tokens: new Set<string>(),
         };
@@ -105,6 +109,7 @@ export class DecoderState {
                 results: [],
                 children: [],
             });
+            this.decodeOrder.push(this.decoded.get(input)!);
         }
 
         return this.decoded.get(input)!;

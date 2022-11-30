@@ -29,7 +29,7 @@ registerDecoder(new ENSDecoder());
 registerDecoder(new TransferDecoder());
 
 export const decode = async (input: DecoderInput, access: DecoderChainAccess): Promise<[DecoderOutput, MetadataRequest]> => {
-    const state = new DecoderState(access);
+    const state = new DecoderState(input, access);
 
     const visit = async (node: DecoderInput): Promise<DecoderOutput> => {
         if (node.failed) {
@@ -75,7 +75,7 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
         output.results.push(...results);
 
         if (node.childOrder) {
-            await Promise.all(node.childOrder.map(async (child) => {
+            for (let child of node.childOrder) {
                 let result;
                 if (child[0] === 'log') {
                     result = await decodeLog(node, node.logs[child[1]]);
@@ -84,17 +84,18 @@ export const decode = async (input: DecoderInput, access: DecoderChainAccess): P
                 }
 
                 output.children.push(result);
-            }));
+
+            }
         } else {
             if (node.children) {
-                await Promise.all(node.children.map(async (child) => {
+                for (let child of node.children) {
                     output.children.push(await visit(child));
-                }))
+                }
             }
             if (node.logs) {
-                await Promise.all(node.logs.map(async (log) => {
+                for (let log of node.logs) {
                     output.children.push(await decodeLog(node, log));
-                }))
+                }
             }
         }
 

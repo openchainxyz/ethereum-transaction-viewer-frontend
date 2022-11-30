@@ -29,12 +29,12 @@ export class TransferDecoder extends Decoder<TransferAction> {
         if (node.abi) {
             const decodedEvent = node.abi.parseLog(log);
 
-            state.requestTokenMetadata(node.to);
+            state.requestTokenMetadata(log.address);
 
             return {
                 type: this.name,
                 operator: node.from,
-                token: node.to,
+                token: log.address,
                 from: decodedEvent.args[0],
                 to: decodedEvent.args[1],
                 amount: decodedEvent.args[2],

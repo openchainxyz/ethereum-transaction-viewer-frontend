@@ -140,8 +140,12 @@ export const DecodeTree = (props: DecodeTreeProps) => {
         };
 
         const input = remap(props.traceResult.entrypoint);
+        console.log("remapped input", input);
         decode(input, access)
-            .then(data => setData(data));
+            .then(data => {
+                console.log("decoded output", data);
+                setData(data)
+            });
     }, [props.traceResult, props.traceMetadata]);
 
     let children;
