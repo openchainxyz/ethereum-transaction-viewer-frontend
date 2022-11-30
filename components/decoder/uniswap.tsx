@@ -1,4 +1,4 @@
-import { DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic } from './types';
+import { CallDecoder, DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic } from './types';
 import { DataRenderer } from '../DataRenderer';
 import { BigNumber, BytesLike, ethers } from 'ethers';
 import * as React from 'react';
@@ -6,94 +6,124 @@ import { EventFragment, Result } from '@ethersproject/abi';
 import { FunctionFragment } from '@ethersproject/abi/lib';
 import { SwapAction } from './actions';
 import { TraceEntry, TraceEntryCall } from '../api';
+import { isNullishCoalesce } from 'typescript';
 
-const uniswapsByRouter: Record<string, any> = {
-    '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D': {
+type UniswapDeployment = {
+    name: string;
+    factory: string;
+    initcodeHash: string;
+    routers: string[];
+}
+
+const uniswaps: UniswapDeployment[] = [
+    {
+        name: 'Uniswap V2',
         factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
         initcodeHash: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
+        routers: [
+            '0xf164fC0Ec4E93095b804a4795bBe1e041497b92a',
+            '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+        ],
     },
-    '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F': {
+    {
+        name: 'SushiSwap',
         factory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
         initcodeHash: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
+        routers: [
+            '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+        ],
     },
-};
+]
+
+
+const getTokens = (tokenA: string, tokenB: string): [string, string] => {
+    return tokenA < tokenB ? [tokenA, tokenB] : [tokenB, tokenA];
+}
+
+const computePairAddress = (factory: string, initcodeHash: BytesLike, tokenA: string, tokenB: string) => {
+    const [token0, token1] = getTokens(tokenA, tokenB);
+
+    const salt = ethers.utils.solidityKeccak256(['address', 'address'], [token0, token1]);
+
+    return ethers.utils.getCreate2Address(factory, salt, initcodeHash);
+}
 
 export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
     functions = {
         'swapExactTokensForTokens(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
-            {
-                exactIn: true,
-                input: 'tokens',
-                output: 'tokens',
-                fee: false,
-            },
+        {
+            exactIn: true,
+            input: 'tokens',
+            output: 'tokens',
+            fee: false,
+        },
         'swapTokensForExactTokens(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
-            {
-                exactIn: false,
-                input: 'tokens',
-                output: 'tokens',
-                fee: false,
-            },
+        {
+            exactIn: false,
+            input: 'tokens',
+            output: 'tokens',
+            fee: false,
+        },
         'swapExactETHForTokens(uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
-            {
-                exactIn: true,
-                input: 'eth',
-                output: 'tokens',
-                fee: false,
-            },
+        {
+            exactIn: true,
+            input: 'eth',
+            output: 'tokens',
+            fee: false,
+        },
         'swapTokensForExactETH(uint256 amountOut,uint256 amountInMax,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
-            {
-                exactIn: false,
-                input: 'tokens',
-                output: 'eth',
-                fee: false,
-            },
+        {
+            exactIn: false,
+            input: 'tokens',
+            output: 'eth',
+            fee: false,
+        },
         'swapExactTokensForETH(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
-            {
-                exactIn: true,
-                input: 'tokens',
-                output: 'eth',
-                fee: false,
-            },
+        {
+            exactIn: true,
+            input: 'tokens',
+            output: 'eth',
+            fee: false,
+        },
         'swapETHForExactTokens(uint256 amountOut,address[] memory path,address to,uint256 deadline) returns (uint[] memory amounts)':
-            {
-                exactIn: false,
-                input: 'eth',
-                output: 'tokens',
-                fee: false,
-            },
+        {
+            exactIn: false,
+            input: 'eth',
+            output: 'tokens',
+            fee: false,
+        },
         'swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline)':
-            {
-                exactIn: true,
-                input: 'tokens',
-                output: 'tokens',
-                fee: true,
-            },
+        {
+            exactIn: true,
+            input: 'tokens',
+            output: 'tokens',
+            fee: true,
+        },
         'swapExactETHForTokensSupportingFeeOnTransferTokens(uint256 amountOutMin,address[] memory path,address to,uint256 deadline)':
-            {
-                exactIn: true,
-                input: 'eth',
-                output: 'tokens',
-                fee: true,
-            },
+        {
+            exactIn: true,
+            input: 'eth',
+            output: 'tokens',
+            fee: true,
+        },
         'swapExactTokensForETHSupportingFeeOnTransferTokens(uint256 amountIn,uint256 amountOutMin,address[] memory path,address to,uint256 deadline)':
-            {
-                exactIn: true,
-                input: 'tokens',
-                output: 'eth',
-                fee: true,
-            },
+        {
+            exactIn: true,
+            input: 'tokens',
+            output: 'eth',
+            fee: true,
+        },
     };
 
     constructor() {
         super('uniswap-v2-router-swap');
     }
 
-    decodeCall(state: DecoderState, node: DecoderInput): SwapAction | null {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<SwapAction | null> {
         if (state.isConsumed(node)) return null;
         if (node.type !== 'call') return null;
 
-        const routerInfo = uniswapsByRouter[node.to];
+        const routerInfo = uniswaps.find(v => v.routers.includes(node.to));
         if (!routerInfo) return null;
 
         const functionInfo = Object.entries(this.functions).find(([name, func]) => {
@@ -149,16 +179,16 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
             const abi = new ethers.utils.Interface([EventFragment.from(swapEventSelector)]);
 
             const swapEvents = node.logs.filter((log) => hasTopic(log, swapEventSelector));
-            const [firstToken0, firstToken1] = this.getTokens(path[0], path[1]);
-            const firstPairAddress = this.computePairAddress(
+            const [firstToken0, firstToken1] = getTokens(path[0], path[1]);
+            const firstPairAddress = computePairAddress(
                 routerInfo.factory,
                 routerInfo.initcodeHash,
                 firstToken0,
                 firstToken1,
             );
 
-            const [lastToken0, lastToken1] = this.getTokens(path[path.length - 2], path[path.length - 1]);
-            const lastPairAddress = this.computePairAddress(
+            const [lastToken0, lastToken1] = getTokens(path[path.length - 2], path[path.length - 1]);
+            const lastPairAddress = computePairAddress(
                 routerInfo.factory,
                 routerInfo.initcodeHash,
                 lastToken0,
@@ -240,24 +270,12 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
         }
 
         keys.push('recipient');
-        values.push(<DataRenderer chain={opts.chain} preferredType={'address'} data={result.recipient} />);
+        values.push(<DataRenderer preferredType={'address'} data={result.recipient} />);
 
         keys.push('actor');
-        values.push(<DataRenderer chain={opts.chain} preferredType={'address'} data={result.operator} />);
+        values.push(<DataRenderer preferredType={'address'} data={result.operator} />);
 
         return this.renderResult('swap', '#645e9d', keys, values);
-    }
-
-    getTokens(tokenA: string, tokenB: string): [string, string] {
-        return tokenA < tokenB ? [tokenA, tokenB] : [tokenB, tokenA];
-    }
-
-    computePairAddress(factory: string, initcodeHash: BytesLike, tokenA: string, tokenB: string) {
-        const [token0, token1] = this.getTokens(tokenA, tokenB);
-
-        const salt = ethers.utils.solidityKeccak256(['address', 'address'], [token0, token1]);
-
-        return ethers.utils.getCreate2Address(factory, salt, initcodeHash);
     }
 
     consumeSwaps(state: DecoderState, node: DecoderInput) {
@@ -311,6 +329,91 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
     }
 }
 
+export class UniswapV2PairSwapDecoder extends CallDecoder<SwapAction> {
+    constructor() {
+        super('uniswap-v2-pair');
+
+        this.functions['swap(uint256 amount0Out, uint256 amount1Out, address to, bytes data)'] = this.decodeSwap;
+    }
+
+    async getDeploymentForPair(state: DecoderState, address: string): Promise<[string, string, UniswapDeployment] | null> {
+        const token0 = "0x" + (await state.access.getStorageAt(address, "0x06")).substring(26);
+        const token1 = "0x" + (await state.access.getStorageAt(address, "0x07")).substring(26);
+
+        const deployment = uniswaps.find(deployment => {
+            const pairAddress = computePairAddress(deployment.factory, deployment.initcodeHash, token0, token1);
+            return pairAddress.toLocaleLowerCase() === address.toLocaleLowerCase();
+        });
+
+        if (!deployment) {
+            return null;
+        }
+
+        return [token0, token1, deployment];
+    }
+
+    async isTargetContract(state: DecoderState, address: string): Promise<boolean> {
+        return !!(await this.getDeploymentForPair(state, address))
+    }
+
+    async decodeSwap(state: DecoderState, node: DecoderInput, inputs: Result, outputs: Result | null): Promise<SwapAction> {
+        const [token0, token1, deployment] = (await this.getDeploymentForPair(state, node.to))!;
+
+        if (node.logs) {
+            // the last log must be a swap
+            state.consume(node.logs[node.logs.length - 1]);
+        }
+
+        if (node.children) {
+            // there must be at least one transfer out
+            state.consumeTransfer(node.children[0]);
+        }
+
+        const amount0Out = inputs['amount0Out'];
+        const amount1Out = inputs['amount1Out'];
+
+        const action: SwapAction = {
+            type: this.name,
+            operator: node.from,
+            recipient: inputs['to'],
+            tokenIn: token0,
+            tokenOut: token1,
+        };
+
+        return action;
+    }
+
+    format(result: SwapAction, opts: DecodeFormatOpts): JSX.Element {
+        const keys = [];
+        const values = [];
+
+        if (result.amountIn !== undefined) {
+            keys.push('tokenIn');
+            values.push(this.formatTokenAmount(opts, result.tokenIn, result.amountIn));
+        } else if (result.amountInMax !== undefined) {
+            keys.push('tokenInMax');
+            values.push(this.formatTokenAmount(opts, result.tokenIn, result.amountInMax));
+        }
+
+        if (result.amountOut !== undefined) {
+            keys.push('amountOut');
+            values.push(this.formatTokenAmount(opts, result.tokenOut, result.amountOut));
+        } else if (result.amountOutMin !== undefined) {
+            keys.push('amountOutMin');
+            values.push(this.formatTokenAmount(opts, result.tokenOut, result.amountOutMin));
+        }
+
+        keys.push('recipient');
+        values.push(<DataRenderer preferredType={'address'} data={result.recipient} />);
+
+        keys.push('actor');
+        values.push(<DataRenderer preferredType={'address'} data={result.operator} />);
+
+        return this.renderResult('swap', '#645e9d', keys, values);
+    }
+
+}
+
 export type UniswapV2RouterAddLiquidityResult = {
     type: string;
     actor: string;
@@ -332,13 +435,13 @@ export type UniswapV2RouterAddLiquidityResult = {
 export class UniswapV2RouterAddLiquidityDecoder extends Decoder<UniswapV2RouterAddLiquidityResult> {
     functions = {
         'addLiquidity(address tokenA,address tokenB,uint256 amountADesired,uint256 amountBDesired,uint256 amountAMin,uint256 amountBMin,address to,uint256 deadline) returns (uint amountA, uint amountB, uint liquidity)':
-            {
-                eth: false,
-            },
+        {
+            eth: false,
+        },
         'addLiquidityETH(address token,uint256 amountTokenDesired,uint256 amountTokenMin,uint256 amountETHMin,address to,uint256) returns (uint amountToken, uint amountETH, uint liquidity)':
-            {
-                eth: true,
-            },
+        {
+            eth: true,
+        },
     };
 
     constructor() {

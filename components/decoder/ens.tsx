@@ -35,7 +35,7 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
         super('ens');
     }
 
-    decodeCall(state: DecoderState, node: DecoderInput): ENSRegisterAction | null {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<ENSRegisterAction | null> {
         if (state.isConsumed(node)) return null;
 
         if (node.to.toLowerCase() !== '0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'.toLowerCase()) return null;

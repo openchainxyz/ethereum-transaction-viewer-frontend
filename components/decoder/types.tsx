@@ -24,6 +24,10 @@ export const hasTopic = (log: Log, selector: string | EventFragment) => {
     return log.topics.length > 0 && log.topics[0] == ethers.utils.id(EventFragment.from(selector).format());
 };
 
+export interface DecoderChainAccess {
+    getStorageAt(address: string, slot: string): Promise<string>;
+}
+
 export interface DecoderInput {
     // a unique id per input node
     id: string;
@@ -77,15 +81,33 @@ export const getNodeId = (node: DecoderInput | Log) => {
 };
 
 export class DecoderState {
+    access: DecoderChainAccess;
+
     consumed: Set<string>;
+
+    decoded: Map<DecoderInput | Log, DecoderOutput>;
 
     requestedMetadata: MetadataRequest;
 
-    constructor() {
+    constructor(access: DecoderChainAccess) {
+        this.access = access;
         this.consumed = new Set<string>();
+        this.decoded = new Map<DecoderInput, DecoderOutput>();
         this.requestedMetadata = {
             tokens: new Set<string>(),
         };
+    }
+
+    public getOutputFor(input: DecoderInput | Log): DecoderOutput {
+        if (!this.decoded.has(input)) {
+            this.decoded.set(input, {
+                node: input,
+                results: [],
+                children: [],
+            });
+        }
+
+        return this.decoded.get(input)!;
     }
 
     requestTokenMetadata(token: string) {
@@ -167,7 +189,7 @@ export class DecoderState {
                         if (values.args[0] === from && values.args[1] === to) {
                             this.consume(v);
                         }
-                    } catch {}
+                    } catch { }
                 });
 
             // if we have a delegatecall, we need to recurse because it will emit the log in the context of the
@@ -192,11 +214,11 @@ export abstract class Decoder<T extends BaseAction> {
         this.name = name;
     }
 
-    decodeCall(state: DecoderState, node: DecoderInput): T | T[] | null {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<T | T[] | null> {
         return null;
     }
 
-    decodeLog(state: DecoderState, node: DecoderInput, log: Log): T | T[] | null {
+    async decodeLog(state: DecoderState, node: DecoderInput, log: Log): Promise<T | T[] | null> {
         return null;
     }
 
@@ -287,4 +309,38 @@ export abstract class Decoder<T extends BaseAction> {
             </>
         );
     }
+}
+
+export abstract class CallDecoder<T extends BaseAction> extends Decoder<T> {
+    functions: Record<string, (state: DecoderState, node: DecoderInput, inputs: Result, outputs: Result | null) => Promise<T>>;
+
+    constructor(name: string) {
+        super(name);
+
+        this.functions = {};
+    }
+
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<T | T[] | null> {
+        if (state.isConsumed(node)) return null;
+
+        if (node.type !== 'call') return null;
+
+        const functionInfo = Object.entries(this.functions).find(([name, func]) => {
+            return hasSelector(node.calldata, name);
+        });
+
+        if (!functionInfo) return null;
+
+        if (!await this.isTargetContract(state, node.to)) return null;
+
+        state.consume(node);
+
+        const [inputs, outputs] = this.decodeFunctionWithFragment(node, FunctionFragment.from(functionInfo[0]));
+
+        const functionMetadata = functionInfo[1];
+
+        return functionMetadata.bind(this)(state, node, inputs, outputs);
+    }
+
+    abstract isTargetContract(state: DecoderState, address: string): Promise<boolean>;
 }

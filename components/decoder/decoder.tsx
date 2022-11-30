@@ -1,143 +1,49 @@
-import { TraceMetadata } from '../types';
+import { Log } from '@ethersproject/abstract-provider';
+import { ENSDecoder } from './ens';
+import { TransferDecoder } from './fallback';
 import {
     BaseAction,
     DecodeFormatOpts,
     Decoder,
+    DecoderChainAccess,
     DecoderInput,
     DecoderOutput,
     DecoderState,
-    MetadataRequest,
+    MetadataRequest
 } from './types';
-import { UniswapV2RouterSwapDecoder } from './uniswap';
-import { TransferDecoder } from './fallback';
-import { BigNumber, ethers } from 'ethers';
-import { Log } from '@ethersproject/abstract-provider';
-import { Interface } from '@ethersproject/abi';
-import { findAffectedContract } from '../helpers';
-import { ENSDecoder } from './ens';
-import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
+import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswap';
 
 const allDecoders: Record<string, Decoder<BaseAction>> = {};
-const decodeOrder: Decoder<BaseAction>[] = [];
+const allDecodersArray: Decoder<BaseAction>[] = [];
 
 export const registerDecoder = (decoder: Decoder<BaseAction>) => {
-    decodeOrder.push(decoder);
+    allDecodersArray.push(decoder);
     allDecoders[decoder.name] = decoder;
 };
 
 registerDecoder(new UniswapV2RouterSwapDecoder());
+registerDecoder(new UniswapV2PairSwapDecoder());
 registerDecoder(new ENSDecoder());
-// registerDecoder(new UniswapV2RouterAddLiquidityDecoder());
-// registerDecoder(new UniswapV2RouterRemoveLiquidityDecoder());
 
 // must come last!
 registerDecoder(new TransferDecoder());
 
-export const decode = (trace: TraceResponse, metadata: TraceMetadata): [DecoderOutput, MetadataRequest] => {
-    let logIndex = 0;
-    let indexToPath: Record<number, string> = {};
+export const decode = async (input: DecoderInput, access: DecoderChainAccess): Promise<[DecoderOutput, MetadataRequest]> => {
+    const state = new DecoderState(access);
 
-    const flattenLogs = (node: TraceEntryCall, recursive: boolean): Array<Log> => {
-        const ourLogs = node.children
-            .filter((node): node is TraceEntryLog => node.type === 'log')
-            .map((logNode) => {
-                const [affected] = findAffectedContract(metadata, logNode);
-                indexToPath[logIndex] = logNode.path;
-                const log: Log = {
-                    address: ethers.utils.getAddress(affected.to),
-                    blockHash: '',
-                    blockNumber: 0,
-                    data: logNode.data,
-                    logIndex: logNode.path,
-                    removed: false,
-                    topics: logNode.topics,
-                    transactionHash: trace.txhash,
-                    transactionIndex: 0,
-                };
-                return log;
-            });
-        if (!recursive) {
-            return ourLogs;
-        }
-
-        node.children
-            .filter((node): node is TraceEntryCall => node.type === 'call')
-            .forEach((v) => {
-                ourLogs.push(...flattenLogs(v, true));
-            });
-
-        return ourLogs;
-    };
-
-    const remap = (node: TraceEntryCall, parentAbi?: Interface): DecoderInput => {
-        let thisAbi = new Interface([
-            ...metadata.abis[node.to][node.codehash].fragments,
-            ...(parentAbi?.fragments || []),
-        ]);
-
-        const logs = flattenLogs(node, false);
-        const children = node.children
-            .filter((node): node is TraceEntryCall => node.type === 'call')
-            .map((v) => {
-                if (v.variant === 'delegatecall') {
-                    return remap(v, thisAbi);
-                } else {
-                    return remap(v, undefined);
-                }
-            });
-
-        return {
-            id: node.path,
-            type: node.variant,
-            from: ethers.utils.getAddress(node.from),
-            to: ethers.utils.getAddress(node.to),
-            value: BigNumber.from(node.value),
-            calldata: ethers.utils.arrayify(node.input),
-
-            status: node.status == 1,
-            logs: logs,
-
-            returndata: ethers.utils.arrayify(node.output),
-            children: children,
-
-            childOrder: node.children
-                .filter((node): node is TraceEntryLog | TraceEntryCall => node.type === 'log' || node.type === 'call')
-                .map((v) => {
-                    if (v.type === 'log') {
-                        return ['log', logs.findIndex((log) => log.logIndex === v.path)];
-                    } else {
-                        return ['call', children.findIndex((child) => child.id === v.path)];
-                    }
-                }),
-
-            abi: thisAbi,
-        };
-    };
-
-    const state = new DecoderState();
-    const input = remap(trace.entrypoint);
-
-    const visit = (node: DecoderInput): DecoderOutput => {
+    const visit = async (node: DecoderInput): Promise<DecoderOutput> => {
         if (node.failed) {
             // we don't decode anything that failed, because there should be no reason
             // to care about something that had no effect
-            return {
-                node: node,
-                results: [],
-                children: [],
-            };
+            return state.getOutputFor(node);
         }
 
-        const decodeLog = (child: DecoderInput, log: Log): DecoderOutput => {
-            const output: DecoderOutput = {
-                node: log,
-                results: [],
-                children: [],
-            };
+        const decodeLog = async (child: DecoderInput, log: Log): Promise<DecoderOutput> => {
+            const output: DecoderOutput = state.getOutputFor(log);
 
-            decodeOrder.forEach((v) => {
+            await Promise.all(allDecodersArray.map(async (v) => {
                 try {
-                    const results = v.decodeLog(state, node, log);
+                    const results = await v.decodeLog(state, node, log);
                     if (!results) return;
 
                     if (Array.isArray(results)) {
@@ -148,56 +54,54 @@ export const decode = (trace: TraceResponse, metadata: TraceMetadata): [DecoderO
                 } catch (e) {
                     console.log('decoder failed to decode log', v.name, node, log, e);
                 }
-            });
+            }));
 
             return output;
         };
 
-        let results = decodeOrder
-            .map((v) => {
+        const output = state.getOutputFor(node);
+
+        let results = (await Promise.all(allDecodersArray
+            .map(async (v) => {
                 try {
-                    return v.decodeCall(state, node);
+                    return await v.decodeCall(state, node);
                 } catch (e) {
                     console.log('decoder failed to decode call', v.name, node, e);
                 }
-            })
+            })))
             .filter((v): v is BaseAction | BaseAction[] => v !== null)
             .flatMap((v) => v);
 
-        let children = [];
+        output.results.push(...results);
+
         if (node.childOrder) {
-            children = node.childOrder.map((child) => {
+            await Promise.all(node.childOrder.map(async (child) => {
+                let result;
                 if (child[0] === 'log') {
-                    return decodeLog(node, node.logs[child[1]]);
+                    result = await decodeLog(node, node.logs[child[1]]);
                 } else {
-                    return visit(node.children[child[1]]);
+                    result = await visit(node.children[child[1]]);
                 }
-            });
+
+                output.children.push(result);
+            }));
         } else {
             if (node.children) {
-                children.push(
-                    ...node.children.map((child) => {
-                        return visit(child);
-                    }),
-                );
+                await Promise.all(node.children.map(async (child) => {
+                    output.children.push(await visit(child));
+                }))
             }
             if (node.logs) {
-                children.push(
-                    ...node.logs.map((log) => {
-                        return decodeLog(node, log);
-                    }),
-                );
+                await Promise.all(node.logs.map(async (log) => {
+                    output.children.push(await decodeLog(node, log));
+                }))
             }
         }
 
-        return {
-            node: node,
-            results: results,
-            children: children,
-        };
+        return output;
     };
 
-    return [visit(input), state.requestedMetadata];
+    return [await visit(input), state.requestedMetadata];
 };
 
 export const format = (result: BaseAction, opts: DecodeFormatOpts): JSX.Element => {

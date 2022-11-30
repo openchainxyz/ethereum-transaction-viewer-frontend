@@ -8,7 +8,7 @@ export class TransferDecoder extends Decoder<TransferAction> {
         super('erc20');
     }
 
-    decodeCall(state: DecoderState, node: DecoderInput): TransferAction | null {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<TransferAction | null> {
         if (!state.isConsumed(node) && !node.value.isZero()) {
             return {
                 type: this.name,
@@ -22,7 +22,7 @@ export class TransferDecoder extends Decoder<TransferAction> {
         return null;
     }
 
-    decodeLog(state: DecoderState, node: DecoderInput, log: Log): TransferAction | null {
+    async decodeLog(state: DecoderState, node: DecoderInput, log: Log): Promise<TransferAction | null> {
         if (state.isConsumed(log)) return null;
         if (!hasTopic(log, `Transfer(address,address,uint256)`)) return null;
 
@@ -51,9 +51,9 @@ export class TransferDecoder extends Decoder<TransferAction> {
             [opts.tokens.tokens[result.token.toLowerCase()]?.isNft ? 'id' : 'amount', 'from', 'to', 'operator'],
             [
                 this.formatTokenAmount(opts, result.token, result.amount),
-                <DataRenderer chain={opts.chain} preferredType={'address'} data={result.from} />,
-                <DataRenderer chain={opts.chain} preferredType={'address'} data={result.to} />,
-                <DataRenderer chain={opts.chain} preferredType={'address'} data={result.operator} />,
+                <DataRenderer preferredType={'address'} data={result.from} />,
+                <DataRenderer preferredType={'address'} data={result.to} />,
+                <DataRenderer preferredType={'address'} data={result.operator} />,
             ],
         );
     }
