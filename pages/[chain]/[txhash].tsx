@@ -8,7 +8,7 @@ import styles from '../../styles/Home.module.css';
 import {useRouter} from 'next/router';
 import {BaseProvider, JsonRpcProvider} from '@ethersproject/providers';
 import {TransactionInfo} from '../../components/transaction-info/TransactionInfo';
-import {DecodeTree} from '../../components/decoder/DecodeTree';
+import {DecodeTree} from '../../components/decoder/format/DecodeTree';
 import {ChainConfig, ChainConfigContext, defaultChainConfig, getChain} from '../../components/Chains';
 import Home from '../index';
 import {ValueChange} from '../../components/value-change/ValueChange';

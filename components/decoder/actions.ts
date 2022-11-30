@@ -2,8 +2,12 @@ import { BigNumber } from 'ethers';
 
 export const NATIVE_TOKEN = 'native_token';
 
-export interface TransferAction {
+export type BaseAction = {
     type: string;
+};
+
+export interface TransferAction {
+    type: 'transfer';
 
     operator: string;
 
@@ -15,7 +19,7 @@ export interface TransferAction {
 }
 
 export type SwapAction = {
-    type: string;
+    type: 'swap';
 
     operator: string;
 
@@ -29,3 +33,20 @@ export type SwapAction = {
     amountOut?: BigNumber;
     amountOutMin?: BigNumber;
 };
+
+export type ENSRegisterAction = {
+    type: 'ens-register';
+
+    operator: string;
+
+    owner: string;
+    name: string;
+    duration: number;
+    cost: bigint;
+
+    resolver?: string;
+    addr?: string;
+};
+
+
+export type Action = TransferAction | SwapAction | ENSRegisterAction;

@@ -11,7 +11,7 @@ import { formatUsd } from '../helpers';
 import { PriceMetadata } from '../metadata/prices';
 import { TokenMetadata } from '../metadata/tokens';
 import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
-import { NATIVE_TOKEN } from './actions';
+import { Action, BaseAction, NATIVE_TOKEN } from './actions';
 
 export const hasSelector = (calldata: BytesLike, selector: string | FunctionFragment) => {
     return (
@@ -32,35 +32,38 @@ export interface DecoderInput {
     // a unique id per input node
     id: string;
 
-    // data that should be available for all callers (eth_getTransaction)
+    // optional: attach an abi to this node if you like
+    abi?: ethers.utils.Interface;
+
     type: 'call' | 'staticcall' | 'callcode' | 'delegatecall' | 'create' | 'create2' | 'selfdestruct';
     from: string;
     to: string;
     value: BigNumber;
     calldata: BytesLike;
-
-    // data that is available from a receipt (eth_getReceipt)
-    failed?: boolean;
-    logs?: Array<Log>;
-
-    // data that is available from a trace (debug_traceTransaction)
-    returndata?: BytesLike;
-    children?: Array<DecoderInput>;
-
-    // optional data to inform the order of logs and calls
-    childOrder?: Array<['log' | 'call', number]>;
-
-    // optional: attach an abi to this node if you like
-    abi?: ethers.utils.Interface;
 }
 
-export type BaseAction = {
-    type: string;
-};
+export interface DecoderInputReceiptExt extends DecoderInput {
+    failed: boolean;
+    logs: Array<Log>;
+}
+
+export interface DecoderInputTraceExt extends DecoderInputReceiptExt {
+    returndata: BytesLike;
+    children: Array<DecoderInputTraceExt>;
+    childOrder: Array<['log' | 'call', number]>;
+}
+
+export const hasReceiptExt = (node: DecoderInput): node is DecoderInputReceiptExt => {
+    return (node as DecoderInputReceiptExt).logs !== undefined;
+}
+
+export const hasTraceExt = (node: DecoderInput): node is DecoderInputTraceExt => {
+    return (node as DecoderInputTraceExt).returndata !== undefined;
+}
 
 export type DecoderOutput = {
     node: DecoderInput | Log;
-    results: BaseAction[];
+    results: Action[];
     children: DecoderOutput[];
 };
 
@@ -133,14 +136,18 @@ export class DecoderState {
     consumeAll(node: DecoderInput) {
         this.consume(node);
 
-        node.logs?.forEach(this.consume.bind(this));
+        if (hasReceiptExt(node)) {
+            node.logs.forEach(this.consume.bind(this));
+        }
     }
 
     // consume the node and all logs in it, including all child calls
     consumeAllRecursively(node: DecoderInput) {
         this.consumeAll(node);
 
-        node.children?.forEach(this.consumeAllRecursively.bind(this));
+        if (hasTraceExt(node)) {
+            node.children?.forEach(this.consumeAllRecursively.bind(this));
+        }
     }
 
     // assuming the input node is a call with `transfer`-like semantics (i.e. it causes a transfer from the caller
@@ -173,10 +180,12 @@ export class DecoderState {
         // consume the current node
         this.consume(node);
 
-        const visit = (node: DecoderInput) => {
+        if (!hasTraceExt(node)) return;
+
+        const visit = (node: DecoderInputTraceExt) => {
             // handle any transfer events we might find, must be a match on from and to, because it might take fees
             node.logs
-                ?.filter(
+                .filter(
                     (v) =>
                         v.topics.length > 0 &&
                         v.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
@@ -199,40 +208,25 @@ export class DecoderState {
 
             // if we have a delegatecall, we need to recurse because it will emit the log in the context of the
             // current contract
-            node.children?.filter((v) => v.type === 'delegatecall').forEach(visit);
+            node.children.filter((v) => v.type === 'delegatecall').forEach(visit);
         };
         visit(node);
     }
 }
 
-export type DecodeFormatOpts = {
-    timestamp: number;
-    chain: ChainConfig;
-    prices: PriceMetadata;
-    tokens: TokenMetadata;
-};
-
 export abstract class Decoder<T extends BaseAction> {
-    name: string;
-
-    constructor(name: string) {
-        this.name = name;
-    }
-
-    async decodeCall(state: DecoderState, node: DecoderInput): Promise<T | T[] | null> {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<T | null> {
         return null;
     }
 
-    async decodeLog(state: DecoderState, node: DecoderInput, log: Log): Promise<T | T[] | null> {
+    async decodeLog(state: DecoderState, node: DecoderInput, log: Log): Promise<T | null> {
         return null;
     }
-
-    abstract format(result: T, opts: DecodeFormatOpts): JSX.Element;
 
     decodeFunctionWithFragment(node: DecoderInput, functionFragment: FunctionFragment): [Result, Result | null] {
         return [
             defaultAbiCoder.decode(functionFragment.inputs, ethers.utils.arrayify(node.calldata).slice(4)),
-            node.returndata && functionFragment.outputs
+            hasTraceExt(node) && functionFragment.outputs
                 ? defaultAbiCoder.decode(functionFragment.outputs, ethers.utils.arrayify(node.returndata))
                 : null,
         ];
@@ -242,90 +236,17 @@ export abstract class Decoder<T extends BaseAction> {
         const abi = new ethers.utils.Interface([eventFragment]);
         return abi.parseLog(log);
     }
-
-    formatAddress(addr: string): JSX.Element {
-        return <DataRenderer preferredType={'address'} data={addr} />;
-    }
-
-    formatTokenAmount(opts: DecodeFormatOpts, token: string, amount: BigNumberish): JSX.Element {
-        token = token.toLowerCase();
-        if (token === NATIVE_TOKEN) {
-            token = opts.chain.nativeTokenAddress || '';
-        }
-
-        let amountFormatted = amount.toString();
-        let address = <DataRenderer preferredType={'address'} data={token} />;
-        let price;
-
-        let tokenInfo = opts.tokens.tokens[token];
-        if (tokenInfo !== undefined) {
-            if (tokenInfo.decimals !== undefined) {
-                amountFormatted = ethers.utils.formatUnits(amount, tokenInfo.decimals);
-            }
-            if (tokenInfo.symbol !== undefined) {
-                address = (
-                    <DataRenderer
-                        labels={{ [token]: tokenInfo.symbol }}
-                        preferredType={'address'}
-                        data={token}
-                    />
-                );
-            }
-        }
-
-        let historicalPrice = opts.prices.prices[token]?.historicalPrice;
-        let currentPrice = opts.prices.prices[token]?.currentPrice;
-        if (historicalPrice !== undefined && currentPrice !== undefined) {
-            price = (
-                <>
-                    &nbsp;(
-                    <Tooltip
-                        title={currentPrice ? formatUsd(amount.mul(currentPrice)) + ' today' : 'Current price unknown'}
-                    >
-                        <span>{formatUsd(amount.mul(historicalPrice))}</span>
-                    </Tooltip>
-                    )
-                </>
-            );
-        }
-
-        return (
-            <>
-                {amountFormatted}&nbsp;<span style={{ color: '#7b9726' }}>{address}</span>
-                {price}
-            </>
-        );
-    }
-
-    renderResult(nodeType: string, nodeColor: string, keys: string[], values: any[]) {
-        return (
-            <>
-                <TraceTreeNodeLabel nodeType={nodeType} nodeColor={nodeColor} />
-                &nbsp;
-                <WithSeparator separator={<>,&nbsp;</>}>
-                    {keys.map((key, idx) => {
-                        return (
-                            <React.Fragment key={`param_${idx}`}>
-                                <span style={{ color: '#a8a19f' }}>{key}</span>={values[idx]}
-                            </React.Fragment>
-                        );
-                    })}
-                </WithSeparator>
-            </>
-        );
-    }
 }
 
 export abstract class CallDecoder<T extends BaseAction> extends Decoder<T> {
     functions: Record<string, (state: DecoderState, node: DecoderInput, inputs: Result, outputs: Result | null) => Promise<T>>;
 
-    constructor(name: string) {
-        super(name);
-
+    constructor() {
+        super();
         this.functions = {};
     }
 
-    async decodeCall(state: DecoderState, node: DecoderInput): Promise<T | T[] | null> {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<T | null> {
         if (state.isConsumed(node)) return null;
 
         if (node.type !== 'call') return null;

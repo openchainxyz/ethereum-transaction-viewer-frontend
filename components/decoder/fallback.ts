@@ -1,17 +1,12 @@
-import { DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasTopic } from './types';
-import { DataRenderer } from '../DataRenderer';
-import { NATIVE_TOKEN, TransferAction } from './actions';
 import { Log } from '@ethersproject/abstract-provider';
+import { NATIVE_TOKEN, TransferAction } from './actions';
+import { Decoder, DecoderInput, DecoderState, hasTopic } from './types';
 
 export class TransferDecoder extends Decoder<TransferAction> {
-    constructor() {
-        super('erc20');
-    }
-
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<TransferAction | null> {
         if (!state.isConsumed(node) && !node.value.isZero()) {
             return {
-                type: this.name,
+                type: 'transfer',
                 operator: node.from,
                 from: node.from,
                 to: node.to,
@@ -32,7 +27,7 @@ export class TransferDecoder extends Decoder<TransferAction> {
             state.requestTokenMetadata(log.address);
 
             return {
-                type: this.name,
+                type: 'transfer',
                 operator: node.from,
                 token: log.address,
                 from: decodedEvent.args[0],
@@ -42,19 +37,5 @@ export class TransferDecoder extends Decoder<TransferAction> {
         }
 
         return null;
-    }
-
-    format(result: TransferAction, opts: DecodeFormatOpts): JSX.Element {
-        return this.renderResult(
-            'transfer',
-            '#392b58',
-            [opts.tokens.tokens[result.token.toLowerCase()]?.isNft ? 'id' : 'amount', 'from', 'to', 'operator'],
-            [
-                this.formatTokenAmount(opts, result.token, result.amount),
-                <DataRenderer preferredType={'address'} data={result.from} />,
-                <DataRenderer preferredType={'address'} data={result.to} />,
-                <DataRenderer preferredType={'address'} data={result.operator} />,
-            ],
-        );
     }
 }
