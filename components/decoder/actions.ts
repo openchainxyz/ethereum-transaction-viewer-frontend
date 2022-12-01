@@ -78,10 +78,23 @@ export type UnwrapNativeTokenAction = {
     amount: bigint;
 };
 
+// TODO: Adapt for ERC1155 batch purchases
+export type BuyNFTAction = {
+    type: 'buy-nft';
+
+    operator: string;
+    buyer: string;
+
+    collection: string;
+    tokenId: string;
+};
+
 export type Action =
-    TransferAction |
-    SwapAction |
-    ENSRegisterAction |
-    WrapNativeTokenAction |
-    UnwrapNativeTokenAction |
-    SupplyAction;
+    TransferAction
+    | SwapAction
+    | ENSRegisterAction
+    | WrapNativeTokenAction
+    | UnwrapNativeTokenAction
+    | SupplyAction
+    | BuyNFTAction
+    ;
