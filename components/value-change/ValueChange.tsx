@@ -5,7 +5,7 @@ import { TraceMetadata } from '../types';
 import React, { useContext } from 'react';
 import { SpanIconButton } from '../SpanIconButton';
 import { BigNumber, ethers } from 'ethers';
-import { NATIVE_TOKEN } from '../decoder/actions';
+import { NATIVE_TOKEN } from '../decoder/sdk/actions';
 import { findAffectedContract, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { ChainConfigContext } from '../Chains';

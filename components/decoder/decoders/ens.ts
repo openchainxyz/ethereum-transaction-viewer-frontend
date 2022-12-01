@@ -1,7 +1,8 @@
 import { EventFragment, FunctionFragment } from '@ethersproject/abi/lib';
 import { ethers } from 'ethers';
-import { ENSRegisterAction } from './actions';
-import { Decoder, DecoderInput, DecoderState, hasReceiptExt, hasSelector, hasTopic } from './types';
+import { ENSRegisterAction } from '../sdk/actions';
+import { Decoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasReceiptExt, hasSelector, hasTopic } from '../sdk/utils';
 
 export class ENSDecoder extends Decoder<ENSRegisterAction> {
     functions = {
@@ -13,10 +14,6 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
             hasResolver: true,
         },
     };
-
-    constructor() {
-        super('ens');
-    }
 
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<ENSRegisterAction | null> {
         if (state.isConsumed(node)) return null;

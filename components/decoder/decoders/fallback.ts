@@ -1,6 +1,7 @@
 import { Log } from '@ethersproject/abstract-provider';
-import { NATIVE_TOKEN, TransferAction } from './actions';
-import { Decoder, DecoderInput, DecoderState, hasTopic } from './types';
+import { NATIVE_TOKEN, TransferAction } from '../sdk/actions';
+import { Decoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasTopic } from '../sdk/utils';
 
 export class TransferDecoder extends Decoder<TransferAction> {
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<TransferAction | null> {

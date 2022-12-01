@@ -1,6 +1,7 @@
 import { Result } from '@ethersproject/abi';
-import { NATIVE_TOKEN, UnwrapNativeTokenAction, WrapNativeTokenAction } from './actions';
-import { CallDecoder, DecoderInput, DecoderState, hasTraceExt, isEqualAddress } from './types';
+import { NATIVE_TOKEN, UnwrapNativeTokenAction, WrapNativeTokenAction } from '../sdk/actions';
+import { CallDecoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasTraceExt, isEqualAddress } from '../sdk/utils';
 
 const wrappedNativeTokens = {
     ethereum: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
@@ -23,7 +24,7 @@ export class WrappedNativeTokenDecoder extends CallDecoder<WrapNativeTokenAction
         if (hasTraceExt(node)) {
             state.consumeAll(node);
         }
-        
+
         state.requestTokenMetadata(node.to);
 
         return {

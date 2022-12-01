@@ -1,5 +1,5 @@
-import { DataRenderer } from "../../DataRenderer";
-import { TransferAction } from "../actions";
+import { DataRenderer } from "../DataRenderer";
+import { TransferAction } from "../decoder/sdk/actions";
 import { DecodeFormatOpts, Formatter } from "./types";
 
 export class TransferFormatter extends Formatter<TransferAction> {

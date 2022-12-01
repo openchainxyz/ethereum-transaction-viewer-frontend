@@ -1,23 +1,21 @@
 import { Log } from '@ethersproject/abstract-provider';
-import { Action } from './actions';
-import { ENSDecoder } from './ens';
-import { TransferDecoder } from './fallback';
+import { ENSDecoder } from '../decoders/ens';
+import { TransferDecoder } from '../decoders/fallback';
 import {
     Decoder,
     DecoderChainAccess,
     DecoderInput,
     DecoderOutput,
     DecoderState,
-    hasReceiptExt,
-    hasTraceExt,
     MetadataRequest
 } from './types';
-import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswapv2';
-import { CometSupplyDecoder } from './comet';
-import { WrappedNativeTokenDecoder } from './wrapped';
-import { CurveSwapDecoder } from './curve';
-import { UniswapV3RouterSwapDecoder } from './uniswapv3';
-import { ArtGobblersMintDecoder } from './art-gobblers';
+import { hasReceiptExt, hasTraceExt } from './utils';
+import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from '../decoders/uniswapv2';
+import { CometSupplyDecoder } from '../decoders/comet';
+import { WrappedNativeTokenDecoder } from '../decoders/wrapped';
+import { CurveSwapDecoder } from '../decoders/curve';
+import { UniswapV3RouterSwapDecoder } from '../decoders/uniswapv3';
+import { ArtGobblersMintDecoder } from '../decoders/art-gobblers';
 
 const allDecodersArray: Decoder<any>[] = [];
 

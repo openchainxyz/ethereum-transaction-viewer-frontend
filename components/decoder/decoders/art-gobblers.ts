@@ -1,8 +1,9 @@
 import { Result } from '@ethersproject/abi/lib';
 import { BigNumber, ethers } from 'ethers';
 
-import { MintNFTAction } from "./actions";
-import { CallDecoder, DecoderInput, DecoderState, flattenLogs, hasReceiptExt, isEqualAddress } from "./types";
+import { MintNFTAction } from "../sdk/actions";
+import { CallDecoder, DecoderInput, DecoderState } from "../sdk/types";
+import { flattenLogs, hasReceiptExt, isEqualAddress } from '../sdk/utils';
 
 const gobblerPurchasedEventSignature = 'event GobblerPurchased(address indexed user, uint256 indexed gobblerId, uint256 price)';
 

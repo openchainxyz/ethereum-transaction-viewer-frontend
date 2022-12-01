@@ -1,6 +1,7 @@
 import { Interface, Result } from '@ethersproject/abi';
-import { SwapAction } from './actions';
-import { CallDecoder, DecoderInput, DecoderState, hasReceiptExt, isEqualAddress } from './types';
+import { SwapAction } from '../sdk/actions';
+import { CallDecoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasReceiptExt, isEqualAddress } from '../sdk/utils';
 
 const curveContracts = {
     ethereum: [

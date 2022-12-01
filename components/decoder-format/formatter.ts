@@ -1,4 +1,4 @@
-import { Action } from "../actions";
+import { Action } from "../decoder/sdk/actions";
 import { ENSFormatter } from "./ens";
 import { SwapFormatter } from "./swap";
 import { TransferFormatter } from "./transfer";
