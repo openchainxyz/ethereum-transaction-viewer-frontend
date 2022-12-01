@@ -61,4 +61,4 @@ export type SupplyAction = {
 }
 
 
-export type Action = TransferAction | SwapAction | ENSRegisterAction;
+export type Action = TransferAction | SwapAction | ENSRegisterAction | SupplyAction;

@@ -4,13 +4,15 @@ import { BigNumber, ethers } from 'ethers';
 
 import { CometSupplyDecoder } from "../components/decoder/comet";
 import { DecoderInput, DecoderState, ProviderDecoderChainAccess } from "../components/decoder/types";
-import decoderInputJson from "../testdata/comet_supply_decoder_input.json";
+import decoderInputJson from "../testdata/comet_supply_decoder_json_raw.json";
+import { transformDecoderInput } from "../testdata/utils";
 
 
 describe("CometSupplyDecoder", () => {
     describe("decodeCall", () => {
         it("should decode to valid SupplyAction", async () => {
             const input = decoderInputJson as any as DecoderInput;
+            transformDecoderInput(input);
             const state = new DecoderState(input, new ProviderDecoderChainAccess(new JsonRpcProvider("")));
             const decoder = new CometSupplyDecoder();
             const supplyAction = await decoder.decodeCall(state, input);
