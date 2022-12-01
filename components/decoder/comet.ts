@@ -33,8 +33,6 @@ export class CometSupplyDecoder extends Decoder<SupplyAction> {
 
         if (functionName === undefined) return null;
 
-        console.log("input", node);
-
         const [inputs] = this.decodeFunctionWithFragment(node, FunctionFragment.from(functionName));
 
         state.consume(node);

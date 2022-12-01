@@ -17,6 +17,7 @@ import { CometSupplyDecoder } from './comet';
 import { WrappedNativeTokenDecoder } from './wrapped';
 import { CurveSwapDecoder } from './curve';
 import { UniswapV3RouterSwapDecoder } from './uniswapv3';
+import { ArtGobblersMintDecoder } from './art-gobblers';
 
 const allDecodersArray: Decoder<any>[] = [];
 
@@ -31,6 +32,7 @@ registerDecoder(new CometSupplyDecoder());
 registerDecoder(new WrappedNativeTokenDecoder());
 registerDecoder(new CurveSwapDecoder());
 registerDecoder(new UniswapV3RouterSwapDecoder());
+registerDecoder(new ArtGobblersMintDecoder());
 
 // must come last!
 registerDecoder(new TransferDecoder());

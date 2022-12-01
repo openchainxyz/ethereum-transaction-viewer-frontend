@@ -22,7 +22,7 @@ export type SwapAction = {
     type: 'swap';
 
     exchange: string;
-    
+
     operator: string;
 
     recipient: string;
@@ -80,16 +80,20 @@ export type UnwrapNativeTokenAction = {
     amount: bigint;
 };
 
-// TODO: Adapt for ERC1155 batch purchases
-export type BuyNFTAction = {
-    type: 'buy-nft';
+// TODO: Add support for batch minting a la ERC1155
+export type MintNFTAction = {
+    type: 'nft-mint';
 
     operator: string;
-    buyer: string;
+    recipient: string;
 
     collection: string;
-    tokenId: string;
-};
+    tokenId?: bigint;
+
+    buyToken?: string;
+    buyAmount?: bigint;
+}
+
 
 export type Action =
     TransferAction
@@ -98,5 +102,5 @@ export type Action =
     | WrapNativeTokenAction
     | UnwrapNativeTokenAction
     | SupplyAction
-    | BuyNFTAction
+    | MintNFTAction
     ;
