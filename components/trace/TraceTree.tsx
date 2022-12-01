@@ -421,7 +421,9 @@ export const TraceTree = (props: TraceTreeProps) => {
                     return newMetadata;
                 });
             },
-        );
+        ).catch(e => {
+            console.log("failed to request storage metadata", e);
+        });
     };
 
     let recursivelyGenerateTree = (node: TraceEntry): JSX.Element => {

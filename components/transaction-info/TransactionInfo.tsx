@@ -243,7 +243,10 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'Gas Used'}>
                             {transactionMetadata.receipt.gasUsed.toString()}/
-                            {transactionMetadata.transaction.gasLimit.toString()}
+                            {transactionMetadata.transaction.gasLimit.toString()}&nbsp;({
+                                (transactionMetadata.receipt.gasUsed.toNumber() * 100
+                                / transactionMetadata.transaction.gasLimit.toNumber()).toPrecision(4)
+                            }%)
                         </TransactionAttribute>
                         {gasPriceInfo}
                     </TransactionAttributeRow>
