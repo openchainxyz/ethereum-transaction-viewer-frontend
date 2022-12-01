@@ -4,17 +4,20 @@ import { Decoder, DecoderInput, DecoderState, hasTopic } from './types';
 
 export class TransferDecoder extends Decoder<TransferAction> {
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<TransferAction | null> {
-        if (!state.isConsumed(node) && !node.value.isZero()) {
-            return {
-                type: 'transfer',
-                operator: node.from,
-                from: node.from,
-                to: node.to,
-                token: NATIVE_TOKEN,
-                amount: node.value,
-            };
-        }
-        return null;
+        if (state.isConsumed(node)) return null;
+
+        if (node.value.isZero()) return null;
+
+        console.log('decoding transfer', node);
+
+        return {
+            type: 'transfer',
+            operator: node.from,
+            from: node.from,
+            to: node.to,
+            token: NATIVE_TOKEN,
+            amount: node.value,
+        };
     }
 
     async decodeLog(state: DecoderState, node: DecoderInput, log: Log): Promise<TransferAction | null> {

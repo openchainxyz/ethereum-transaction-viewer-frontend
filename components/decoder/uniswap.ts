@@ -1,12 +1,8 @@
-import { CallDecoder, DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasReceiptExt, hasSelector, hasTopic, hasTraceExt } from './types';
-import { DataRenderer } from '../DataRenderer';
-import { BigNumber, BytesLike, ethers } from 'ethers';
-import * as React from 'react';
 import { EventFragment, Result } from '@ethersproject/abi';
 import { FunctionFragment } from '@ethersproject/abi/lib';
+import { BigNumber, BytesLike, ethers } from 'ethers';
 import { SwapAction } from './actions';
-import { TraceEntry, TraceEntryCall } from '../api';
-import { isNullishCoalesce } from 'typescript';
+import { CallDecoder, Decoder, DecoderInput, DecoderState, hasReceiptExt, hasSelector, hasTopic, hasTraceExt } from './types';
 
 type UniswapDeployment = {
     name: string;
@@ -255,7 +251,7 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
                 state.consume(call);
 
                 call.children
-                    ?.filter((v) => v.type === 'call' && hasSelector(v.calldata, 'transfer(address,uint256)'))
+                    .filter((v) => v.type === 'call' && hasSelector(v.calldata, 'transfer(address,uint256)'))
                     .forEach((v) => state.consumeTransfer(v));
             });
     }

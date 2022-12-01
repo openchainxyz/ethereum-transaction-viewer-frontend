@@ -25,6 +25,10 @@ export const hasTopic = (log: Log, selector: string | EventFragment) => {
     return log.topics.length > 0 && log.topics[0] == ethers.utils.id(EventFragment.from(selector).format());
 };
 
+export const isEqualAddress = (a: string, b: string): boolean => {
+    return a.toLocaleLowerCase() === b.toLocaleLowerCase();
+}
+
 export interface DecoderChainAccess {
     getStorageAt(address: string, slot: string): Promise<string>;
 }
@@ -274,7 +278,7 @@ export abstract class CallDecoder<T extends BaseAction> extends Decoder<T> {
         if (node.type !== 'call') return null;
 
         const functionInfo = Object.entries(this.functions).find(([name, func]) => {
-            return hasSelector(node.calldata, name);
+            return (name === '' && node.calldata.length === 0) || (name !== '' && hasSelector(node.calldata, name));
         });
 
         if (!functionInfo) return null;
