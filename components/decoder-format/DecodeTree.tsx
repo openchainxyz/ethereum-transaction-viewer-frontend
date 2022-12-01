@@ -16,10 +16,32 @@ import { TransactionMetadataContext } from '../metadata/transaction';
 import { TraceTreeItem } from '../trace/TraceTreeItem';
 import { TraceMetadata } from '../types';
 import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
-import { decode } from '../decoder/sdk/decoder';
+import { decode, registerDecoders } from '../decoder/sdk/decoder';
 import { DecoderInputTraceExt, DecoderOutput, MetadataRequest, ProviderDecoderChainAccess } from '../decoder/sdk/types';
 import { getNodeId } from '../decoder/sdk/utils';
 import { format } from './formatter';
+import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from '../decoder/decoders/uniswapv2';
+import { CometSupplyDecoder } from '../decoder/decoders/comet';
+import { WrappedNativeTokenDecoder } from '../decoder/decoders/wrapped';
+import { CurveSwapDecoder } from '../decoder/decoders/curve';
+import { UniswapV3RouterSwapDecoder } from '../decoder/decoders/uniswapv3';
+import { ArtGobblersMintDecoder } from '../decoder/decoders/art-gobblers';
+import { ENSDecoder } from '../decoder/decoders/ens';
+import { TransferDecoder } from '../decoder/decoders/fallback';
+
+registerDecoders([
+    new UniswapV2RouterSwapDecoder(),
+    new UniswapV2PairSwapDecoder(),
+    new ENSDecoder(),
+    new CometSupplyDecoder(),
+    new WrappedNativeTokenDecoder(),
+    new CurveSwapDecoder(),
+    new UniswapV3RouterSwapDecoder(),
+    new ArtGobblersMintDecoder(),
+
+    // must come last!
+    new TransferDecoder(),
+])
 
 export type DecodeTreeProps = {
     provider: BaseProvider;

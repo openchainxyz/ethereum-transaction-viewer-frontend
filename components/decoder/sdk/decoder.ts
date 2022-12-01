@@ -1,6 +1,4 @@
 import { Log } from '@ethersproject/abstract-provider';
-import { ENSDecoder } from '../decoders/ens';
-import { TransferDecoder } from '../decoders/fallback';
 import {
     Decoder,
     DecoderChainAccess,
@@ -10,30 +8,12 @@ import {
     MetadataRequest
 } from './types';
 import { hasReceiptExt, hasTraceExt } from './utils';
-import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from '../decoders/uniswapv2';
-import { CometSupplyDecoder } from '../decoders/comet';
-import { WrappedNativeTokenDecoder } from '../decoders/wrapped';
-import { CurveSwapDecoder } from '../decoders/curve';
-import { UniswapV3RouterSwapDecoder } from '../decoders/uniswapv3';
-import { ArtGobblersMintDecoder } from '../decoders/art-gobblers';
 
 const allDecodersArray: Decoder<any>[] = [];
 
-export const registerDecoder = (decoder: Decoder<any>) => {
-    allDecodersArray.push(decoder);
+export const registerDecoders = (decoders: Decoder<any>[]) => {
+    allDecodersArray.push(...decoders);
 };
-
-registerDecoder(new UniswapV2RouterSwapDecoder());
-registerDecoder(new UniswapV2PairSwapDecoder());
-registerDecoder(new ENSDecoder());
-registerDecoder(new CometSupplyDecoder());
-registerDecoder(new WrappedNativeTokenDecoder());
-registerDecoder(new CurveSwapDecoder());
-registerDecoder(new UniswapV3RouterSwapDecoder());
-registerDecoder(new ArtGobblersMintDecoder());
-
-// must come last!
-registerDecoder(new TransferDecoder());
 
 export const decode = async (input: DecoderInput, access: DecoderChainAccess): Promise<[DecoderOutput, MetadataRequest]> => {
     const state = new DecoderState(input, access);
