@@ -129,7 +129,7 @@ export const DataRenderer = (props: DataRendererProps) => {
 
         let hasPreimage = false;
         let wasIndexed = false;
-        console.log(paramType, decodedData, preimageMetadata.preimages);
+        // console.log(paramType, decodedData, preimageMetadata.preimages);
         const want = paramType.indexed && paramType.baseType !== 'bytes32' ? decodedData.hash : decodedData;
         if ((paramType.type === 'bytes32' || paramType.indexed) && preimageMetadata.preimages[want] !== undefined) {
             decodedData = preimageMetadata.preimages[want];
@@ -227,7 +227,7 @@ export const DataRenderer = (props: DataRendererProps) => {
             );
         }
 
-        console.log(paramType, decodedData, rendered);
+        // console.log(paramType, decodedData, rendered);
 
         return (
             <>

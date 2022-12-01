@@ -3,7 +3,7 @@ import { BaseProvider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import React from 'react';
 import { SupportedChains } from '../Chains';
-import { NATIVE_TOKEN } from '../decoder/actions';
+import { NATIVE_TOKEN } from '../decoder/sdk/actions';
 
 export type TokenInfo = {
     symbol?: string;
@@ -19,7 +19,7 @@ export type TokenMetadata = {
 
 export const defaultTokenMetadata = (): TokenMetadata => {
     return {
-        updater: () => {},
+        updater: () => { },
         status: SupportedChains.reduce((o, chain) => {
             return {
                 ...o,

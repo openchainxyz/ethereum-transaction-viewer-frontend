@@ -1,24 +1,8 @@
-import { DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic } from './types';
 import { EventFragment, FunctionFragment } from '@ethersproject/abi/lib';
-import humanizeDuration from 'humanize-duration';
-import { NATIVE_TOKEN } from './actions';
 import { ethers } from 'ethers';
-import { DateTime } from 'luxon';
-import { Tooltip } from '@mui/material';
-
-export type ENSRegisterAction = {
-    type: string;
-
-    operator: string;
-
-    owner: string;
-    name: string;
-    duration: number;
-    cost: bigint;
-
-    resolver?: string;
-    addr?: string;
-};
+import { ENSRegisterAction } from '../sdk/actions';
+import { Decoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasReceiptExt, hasSelector, hasTopic } from '../sdk/utils';
 
 export class ENSDecoder extends Decoder<ENSRegisterAction> {
     functions = {
@@ -26,16 +10,12 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
             hasResolver: false,
         },
         'registerWithConfig(string name, address owner, uint256 duration, bytes32 secret, address resolver, address addr)':
-            {
-                hasResolver: true,
-            },
+        {
+            hasResolver: true,
+        },
     };
 
-    constructor() {
-        super('ens');
-    }
-
-    decodeCall(state: DecoderState, node: DecoderInput): ENSRegisterAction | null {
+    async decodeCall(state: DecoderState, node: DecoderInput): Promise<ENSRegisterAction | null> {
         if (state.isConsumed(node)) return null;
 
         if (node.to.toLowerCase() !== '0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'.toLowerCase()) return null;
@@ -55,7 +35,7 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
 
         let cost = node.value.toBigInt();
 
-        if (node.logs) {
+        if (hasReceiptExt(node)) {
             const registeredFragment = EventFragment.from(
                 `NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires)`,
             );
@@ -70,7 +50,7 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
         }
 
         const result: ENSRegisterAction = {
-            type: this.name,
+            type: 'ens-register',
             operator: node.from,
             owner: inputs['owner'],
             name: inputs['name'] + '.eth',
@@ -84,34 +64,5 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
         }
 
         return result;
-    }
-
-    format(result: ENSRegisterAction, opts: DecodeFormatOpts): JSX.Element {
-        const keys = ['name', 'owner', 'expiry', 'cost'];
-        const vals = [
-            result.name,
-            this.formatAddress(result.owner),
-            <Tooltip title={humanizeDuration(result.duration * 1000)}>
-                <span>
-                    {DateTime.fromSeconds(opts.timestamp + result.duration).toFormat('yyyy-MM-dd hh:mm:ss ZZZZ')}
-                </span>
-            </Tooltip>,
-            this.formatTokenAmount(opts, NATIVE_TOKEN, result.cost),
-        ];
-
-        if (result.resolver !== undefined && result.resolver !== '0x0000000000000000000000000000000000000000') {
-            keys.push('resolver');
-            vals.push(this.formatAddress(result.resolver));
-        }
-
-        if (result.addr !== undefined && result.addr !== '0x0000000000000000000000000000000000000000') {
-            keys.push('addr');
-            vals.push(this.formatAddress(result.addr));
-        }
-
-        keys.push('operator');
-        vals.push(this.formatAddress(result.operator));
-
-        return this.renderResult('register ens', 'ffffff', keys, vals);
     }
 }

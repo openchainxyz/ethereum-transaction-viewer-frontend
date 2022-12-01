@@ -1,19 +1,25 @@
-import { Box, Collapse, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Box, Collapse, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { TraceMetadata } from '../types';
 import React, { useContext } from 'react';
 import { SpanIconButton } from '../SpanIconButton';
 import { BigNumber, ethers } from 'ethers';
-import { NATIVE_TOKEN } from '../decoder/actions';
+import { NATIVE_TOKEN } from '../decoder/sdk/actions';
 import { findAffectedContract, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
-import { ChainConfigContext } from '../Chains';
-import { fetchDefiLlamaPrices, getPriceOfToken, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
+import { ChainConfig, ChainConfigContext } from '../Chains';
+import { fetchDefiLlamaPrices, getPriceOfToken, PriceMetadata, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
 import { fetchTokenMetadata, TokenMetadata, TokenMetadataContext } from '../metadata/tokens';
 import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
 import { BaseProvider } from '@ethersproject/providers';
 import { TransactionMetadataContext } from '../metadata/transaction';
+
+type AddressValueInfo = {
+    hasMissingPrices: boolean;
+    totalValueChange: bigint;
+    changePerToken: Record<string, bigint>;
+};
 
 export type ValueChangeProps = {
     traceResult: TraceResponse;
@@ -23,11 +29,11 @@ export type ValueChangeProps = {
 
 type RowProps = {
     address: string;
-    changes: Record<string, bigint>;
+    changes: AddressValueInfo;
 };
 
 function Row(props: RowProps) {
-    const { address, changes } = props;
+    const { address, changes: valueInfo } = props;
 
     const priceMetadata = useContext(PriceMetadataContext);
     const tokenMetadata = useContext(TokenMetadataContext);
@@ -35,29 +41,15 @@ function Row(props: RowProps) {
 
     const [open, setOpen] = React.useState(false);
 
-    let hasMissingPrice = false;
-    let changeInValue = 0n;
-    Object.entries(changes).forEach(([token, delta]) => {
-        const defiLlamaId = toDefiLlamaId(chainConfig, token);
-
-        const deltaPrice = getPriceOfToken(priceMetadata, defiLlamaId, delta, 'historical');
-        if (deltaPrice === null) {
-            hasMissingPrice = true;
-            return;
-        }
-
-        changeInValue += deltaPrice;
-    });
-
-    const changeInPriceRendered = hasMissingPrice ? (
+    const changeInPriceRendered = valueInfo.hasMissingPrices ? (
         <span>Loading...</span>
     ) : (
-        <span style={{ color: changeInValue < 0n ? '#ed335f' : changeInValue > 0n ? '#067034' : '' }}>
-            {formatUsd(changeInValue)}
+        <span style={{ color: valueInfo.totalValueChange < 0n ? '#ed335f' : valueInfo.totalValueChange > 0n ? '#067034' : '' }}>
+            {formatUsd(valueInfo.totalValueChange)}
         </span>
     );
 
-    const tokenBreakdown = Object.keys(changes)
+    const tokenBreakdown = Object.keys(valueInfo.changePerToken)
         .sort()
         .map((token) => {
             let labels;
@@ -70,15 +62,15 @@ function Row(props: RowProps) {
             }
             tokenAddress = tokenAddress.toLowerCase();
 
-            let amountFormatted = changes[token].toString();
+            let amountFormatted = valueInfo.changePerToken[token].toString();
             let tokenPriceRendered = 'Loading...';
 
             let tokenInfo = tokenMetadata.tokens[tokenAddress];
             if (tokenInfo !== undefined && tokenInfo.decimals !== undefined) {
-                amountFormatted = ethers.utils.formatUnits(changes[token], tokenInfo.decimals);
+                amountFormatted = ethers.utils.formatUnits(valueInfo.changePerToken[token], tokenInfo.decimals);
             }
             if (priceMetadata.status[priceId] === 'fetched') {
-                tokenPriceRendered = formatUsd(getPriceOfToken(priceMetadata, priceId, changes[token], 'historical')!);
+                tokenPriceRendered = formatUsd(getPriceOfToken(priceMetadata, priceId, valueInfo.changePerToken[token], 'historical')!);
             }
 
             return (
@@ -134,8 +126,10 @@ const computeBalanceChanges = (
     entrypoint: TraceEntryCall,
     traceMetadata: TraceMetadata,
     tokenMetadata: TokenMetadata,
-): [Record<string, Record<string, bigint>>, Set<string>] => {
-    const changes: Record<string, Record<string, bigint>> = {};
+    chainConfig: ChainConfig,
+    priceMetadata: PriceMetadata,
+): [Record<string, AddressValueInfo>, Set<string>] => {
+    const changes: Record<string, AddressValueInfo> = {};
     const allTokens = new Set<string>();
 
     const addChange = (address: string, token: string, change: bigint) => {
@@ -149,14 +143,18 @@ const computeBalanceChanges = (
         }
 
         if (!(address in changes)) {
-            changes[address] = {};
+            changes[address] = {
+                hasMissingPrices: false,
+                totalValueChange: 0n,
+                changePerToken: {},
+            };
         }
-        if (!(token in changes[address])) {
-            changes[address][token] = change;
+        if (!(token in changes[address].changePerToken)) {
+            changes[address].changePerToken[token] = change;
             return;
         }
 
-        changes[address][token] = changes[address][token] + change;
+        changes[address].changePerToken[token] = changes[address].changePerToken[token] + change;
     };
 
     const visitNode = (node: TraceEntryCall) => {
@@ -214,7 +212,7 @@ const computeBalanceChanges = (
     for (let [addr, addrChanges] of Object.entries(changes)) {
         for (let [token, delta] of Object.entries(addrChanges)) {
             if (delta === 0n) {
-                delete addrChanges[token];
+                delete addrChanges.changePerToken[token];
             }
         }
 
@@ -222,6 +220,26 @@ const computeBalanceChanges = (
             delete changes[addr];
         }
     }
+
+    Object.values(changes).forEach(info => {
+        let hasMissingPrice = false;
+        let changeInValue = 0n;
+        Object.entries(info.changePerToken).forEach(([token, delta]) => {
+            const defiLlamaId = toDefiLlamaId(chainConfig, token);
+
+            const deltaPrice = getPriceOfToken(priceMetadata, defiLlamaId, delta, 'historical');
+            if (deltaPrice === null) {
+                hasMissingPrice = true;
+                return;
+            }
+
+            changeInValue += deltaPrice;
+        });
+
+        info.hasMissingPrices = hasMissingPrice;
+        info.totalValueChange = changeInValue;
+    });
+
 
     return [changes, allTokens];
 };
@@ -235,8 +253,9 @@ export const ValueChange = (props: ValueChangeProps) => {
     const priceMetadata = useContext(PriceMetadataContext);
 
     const [changes, allTokens] = React.useMemo(() => {
-        return computeBalanceChanges(traceResult.entrypoint, traceMetadata, tokenMetadata);
-    }, [traceResult, traceMetadata, tokenMetadata]);
+        return computeBalanceChanges(traceResult.entrypoint, traceMetadata, tokenMetadata, chainConfig, priceMetadata);
+    }, [traceResult, traceMetadata, tokenMetadata, priceMetadata, chainConfig]);
+    const [sortOptions, setSortOptions] = React.useState<['address' | 'price', 'asc' | 'desc']>(['price', 'desc']);
 
     fetchDefiLlamaPrices(
         priceMetadata.updater,
@@ -253,15 +272,55 @@ export const ValueChange = (props: ValueChangeProps) => {
             <TableHead>
                 <TableRow>
                     <TableCell />
-                    <TableCell>Address</TableCell>
-                    <TableCell align="right">Change In Value</TableCell>
+                    <TableCell>
+                        <TableSortLabel
+                            active={sortOptions[0] === 'address'}
+                            direction={sortOptions[0] === 'address' ? sortOptions[1] : 'asc'}
+                            onClick={() => {
+                                setSortOptions((prevOptions) => {
+                                    return ['address', prevOptions[0] === 'address' && prevOptions[1] === 'asc' ? 'desc' : 'asc'];
+                                });
+                            }}
+                        >
+                            Address
+                        </TableSortLabel>
+                    </TableCell>
+                    <TableCell align="right">
+                        <TableSortLabel
+                            active={sortOptions[0] === 'price'}
+                            direction={sortOptions[0] === 'price' ? sortOptions[1] : 'asc'}
+                            onClick={() => {
+                                setSortOptions((prevOptions) => {
+                                    return ['price', prevOptions[0] === 'price' && prevOptions[1] === 'asc' ? 'desc' : 'asc'];
+                                });
+                            }}
+                        >
+                            Change In Value
+                        </TableSortLabel>
+                    </TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
-                {Object.keys(changes)
-                    .sort()
-                    .map((row) => {
-                        return <Row key={row} address={row} changes={changes[row]} />;
+                {Object.entries(changes)
+                    .sort(sortOptions[0] === 'address' ? (a, b) => {
+                        return sortOptions[1] === 'asc' ?
+                            a[0].localeCompare(b[0]) :
+                            b[0].localeCompare(a[0]);
+                    } : (a, b) => {
+                        if (!a[1].hasMissingPrices && !b[1].hasMissingPrices) {
+                            return sortOptions[1] === 'asc' ?
+                                (a[1].totalValueChange < b[1].totalValueChange ? -1 : 1) :
+                                (b[1].totalValueChange < a[1].totalValueChange ? -1 : 1);
+                        } else if (a[1].hasMissingPrices) {
+                            return sortOptions[1] === 'asc' ? -1 : 1;
+                        } else if (b[1].hasMissingPrices) {
+                            return sortOptions[1] === 'asc' ? 1 : -1;
+                        } else {
+                            return 0;
+                        }
+                    })
+                    .map((entry) => {
+                        return <Row key={entry[0]} address={entry[0]} changes={entry[1]} />;
                     })}
             </TableBody>
         </Table>
