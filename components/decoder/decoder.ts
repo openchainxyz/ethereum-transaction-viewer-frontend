@@ -13,11 +13,8 @@ import {
     MetadataRequest
 } from './types';
 import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswap';
-<<<<<<< HEAD
 import { CometSupplyDecoder } from './comet';
-=======
 import { WrappedNativeTokenDecoder } from './wrapped';
->>>>>>> asdf
 
 const allDecodersArray: Decoder<any>[] = [];
 
@@ -28,11 +25,8 @@ export const registerDecoder = (decoder: Decoder<any>) => {
 registerDecoder(new UniswapV2RouterSwapDecoder());
 registerDecoder(new UniswapV2PairSwapDecoder());
 registerDecoder(new ENSDecoder());
-<<<<<<< HEAD
 registerDecoder(new CometSupplyDecoder());
-=======
 registerDecoder(new WrappedNativeTokenDecoder());
->>>>>>> asdf
 
 // must come last!
 registerDecoder(new TransferDecoder());
