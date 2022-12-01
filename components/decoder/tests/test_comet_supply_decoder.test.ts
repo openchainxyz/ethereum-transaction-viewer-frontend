@@ -2,18 +2,17 @@ import assert from "assert";
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, ethers } from 'ethers';
 
-import { CometSupplyDecoder } from "../components/decoder/comet";
-import { DecoderInput, DecoderState, isEqualAddress, ProviderDecoderChainAccess } from "../components/decoder/types";
-import decoderInputJson from "../testdata/comet_supply_decoder_input.json";
-import { transformDecoderInput } from "../testdata/utils";
+import { CometSupplyDecoder } from "../decoders/comet";
+import { isEqualAddress } from "../sdk/utils";
+import { getInput, getDummyDecoderState } from "./utils";
+import decoderInputJson from "./testdata/comet_supply_decoder_input.json";
 
 
 describe("CometSupplyDecoder", () => {
     describe("decodeCall", () => {
         it("should decode to valid SupplyAction", async () => {
-            const input = decoderInputJson as any as DecoderInput;
-            transformDecoderInput(input);
-            const state = new DecoderState(input, new ProviderDecoderChainAccess(new JsonRpcProvider("")));
+            const input = getInput(decoderInputJson);
+            const state = getDummyDecoderState(input);
             const decoder = new CometSupplyDecoder();
             const supplyAction = await decoder.decodeCall(state, input);
             assert.strictEqual(supplyAction!.type, "supply");

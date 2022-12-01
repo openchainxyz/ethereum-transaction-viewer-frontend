@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { ChainConfig } from '../Chains';
-import { NATIVE_TOKEN } from '../decoder/actions';
+import { NATIVE_TOKEN } from '../decoder/sdk/actions';
 
 type CoinInfo = {
     confidence: number;
@@ -28,7 +28,7 @@ export type PriceMetadata = {
 
 export const defaultPriceMetadata = (): PriceMetadata => {
     return {
-        updater: () => {},
+        updater: () => { },
         status: {},
         prices: {},
     };

@@ -1,6 +1,7 @@
 import { Result } from '@ethersproject/abi/lib';
-import { SwapAction } from './actions';
-import { CallDecoder, DecoderInput, DecoderState, flattenLogs, getCalls, hasReceiptExt, hasTraceExt, isEqualAddress } from './types';
+import { SwapAction } from '../sdk/actions';
+import { CallDecoder, DecoderInput, DecoderState } from '../sdk/types';
+import { flattenLogs, hasReceiptExt, isEqualAddress } from '../sdk/utils';
 
 const swapEventSignature = `event Swap(
     address indexed sender,

@@ -1,7 +1,7 @@
-import { LogDescription } from '@ethersproject/abi';
 import { Log } from '@ethersproject/abstract-provider';
-import { BurnERC20Action, MintERC20Action, NATIVE_TOKEN, TransferAction } from './actions';
-import { Decoder, DecoderInput, DecoderState, hasTopic } from './types';
+import { BurnERC20Action, MintERC20Action, NATIVE_TOKEN, TransferAction } from '../sdk/actions';
+import { Decoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasTopic } from '../sdk/utils';
 
 export class TransferDecoder extends Decoder<TransferAction | BurnERC20Action | MintERC20Action> {
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<TransferAction | null> {
@@ -21,7 +21,7 @@ export class TransferDecoder extends Decoder<TransferAction | BurnERC20Action | 
 
     async decodeLog(state: DecoderState, node: DecoderInput, log: Log): Promise<MintERC20Action | BurnERC20Action | TransferAction | null> {
         if (state.isConsumed(log)) return null;
-        
+
         if (!hasTopic(log, `Transfer(address,address,uint256)`)) return null;
 
         if (node.abi) {

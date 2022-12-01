@@ -1,8 +1,9 @@
 import { EventFragment, Result } from '@ethersproject/abi';
 import { FunctionFragment } from '@ethersproject/abi/lib';
 import { BigNumber, BytesLike, ethers } from 'ethers';
-import { SwapAction } from './actions';
-import { CallDecoder, Decoder, DecoderInput, DecoderState, hasReceiptExt, hasSelector, hasTopic, hasTraceExt } from './types';
+import { SwapAction } from '../sdk/actions';
+import { CallDecoder, Decoder, DecoderInput, DecoderState } from '../sdk/types';
+import { hasReceiptExt, hasSelector, hasTopic, hasTraceExt } from '../sdk/utils';
 
 type UniswapDeployment = {
     name: string;

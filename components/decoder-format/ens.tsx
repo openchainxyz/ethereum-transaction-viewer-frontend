@@ -1,7 +1,7 @@
 import Tooltip from "@mui/material/Tooltip";
 import humanizeDuration from "humanize-duration";
 import { DateTime } from "luxon";
-import { ENSRegisterAction, NATIVE_TOKEN } from "../actions";
+import { ENSRegisterAction, NATIVE_TOKEN } from "../decoder/sdk/actions";
 import { DecodeFormatOpts, Formatter } from "./types";
 
 export class ENSFormatter extends Formatter<ENSRegisterAction> {

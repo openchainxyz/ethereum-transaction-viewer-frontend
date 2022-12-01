@@ -8,16 +8,17 @@ import * as ethers from 'ethers';
 import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { useContext } from 'react';
-import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../../api';
-import { ChainConfigContext } from '../../Chains';
-import { findAffectedContract } from '../../helpers';
-import { fetchDefiLlamaPrices, PriceMetadataContext } from '../../metadata/prices';
-import { fetchTokenMetadata, TokenMetadataContext } from '../../metadata/tokens';
-import { TransactionMetadataContext } from '../../metadata/transaction';
-import { TraceTreeItem } from '../../trace/TraceTreeItem';
-import { TraceMetadata } from '../../types';
-import { decode } from '../decoder';
-import { DecoderInputTraceExt, DecoderOutput, getNodeId, MetadataRequest, ProviderDecoderChainAccess } from '../types';
+import { ChainConfigContext } from '../Chains';
+import { findAffectedContract } from '../helpers';
+import { fetchDefiLlamaPrices, PriceMetadataContext } from '../metadata/prices';
+import { fetchTokenMetadata, TokenMetadataContext } from '../metadata/tokens';
+import { TransactionMetadataContext } from '../metadata/transaction';
+import { TraceTreeItem } from '../trace/TraceTreeItem';
+import { TraceMetadata } from '../types';
+import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
+import { decode } from '../decoder/sdk/decoder';
+import { DecoderInputTraceExt, DecoderOutput, MetadataRequest, ProviderDecoderChainAccess } from '../decoder/sdk/types';
+import { getNodeId } from '../decoder/sdk/utils';
 import { format } from './formatter';
 
 export type DecodeTreeProps = {

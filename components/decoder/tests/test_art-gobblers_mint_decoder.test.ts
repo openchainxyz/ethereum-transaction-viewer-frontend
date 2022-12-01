@@ -1,9 +1,9 @@
 import assert from "assert";
 
 import { getInput, getDummyDecoderState } from "./utils";
-import decoderInputJson from "../testdata/art-gobblers_mint_decoder_input.json";
-import { ArtGobblersMintDecoder } from "../components/decoder/art-gobblers";
-import { isEqualAddress } from "../components/decoder/types";
+import decoderInputJson from "./testdata/art-gobblers_mint_decoder_input.json";
+import { ArtGobblersMintDecoder } from "../decoders/art-gobblers";
+import { isEqualAddress } from "../sdk/utils";
 import { BigNumber } from "ethers";
 
 
