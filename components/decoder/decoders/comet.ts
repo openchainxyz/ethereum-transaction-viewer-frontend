@@ -7,6 +7,7 @@ import {
 } from "../sdk/types";
 import { hasSelector, hasTraceExt } from "../sdk/utils";
 import { SupplyAction } from "../sdk/actions";
+import { BigNumber } from 'ethers';
 
 const cTokenAddresses = new Set([
     '0xc3d688B66703497DAA19211EEdff47f25384cdc3',
@@ -58,7 +59,7 @@ export class CometSupplyDecoder extends Decoder<SupplyAction> {
                 ? inputs['from']
                 : node.from,
             supplyToken: inputs['asset'],
-            amount: inputs['amount'],
+            amount: (inputs['amount'] as BigNumber).toBigInt(),
         };
 
         // Metadata for cToken

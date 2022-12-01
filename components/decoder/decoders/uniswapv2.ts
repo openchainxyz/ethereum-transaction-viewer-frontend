@@ -158,11 +158,11 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
 
         // pull info from from calldata
         if (swapMetadata.exactIn) {
-            swapResult.amountIn = swapMetadata.input === 'eth' ? node.value : inputs['amountIn'];
-            swapResult.amountOutMin = inputs['amountOutMin'];
+            swapResult.amountIn = swapMetadata.input === 'eth' ? node.value.toBigInt() : (inputs['amountIn'] as BigNumber).toBigInt();
+            swapResult.amountOutMin = (inputs['amountOutMin'] as BigNumber).toBigInt();
         } else {
-            swapResult.amountOut = inputs['amountOut'];
-            swapResult.amountInMax = inputs['amountInMax'];
+            swapResult.amountOut = (inputs['amountOut'] as BigNumber).toBigInt();
+            swapResult.amountInMax = (inputs['amountInMax'] as BigNumber).toBigInt();
         }
 
         // pull info from events
@@ -196,7 +196,9 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
                 const parsedEvent = abi.parseLog(firstSwapEvent);
 
                 swapResult.amountIn =
-                    firstToken0 === path[0] ? parsedEvent.args['amount0In'] : parsedEvent.args['amount1In'];
+                    firstToken0 === path[0]
+                        ? (parsedEvent.args['amount0In'] as BigNumber).toBigInt()
+                        : (parsedEvent.args['amount1In'] as BigNumber).toBigInt();
             }
 
             if (lastSwapEvent) {
@@ -204,8 +206,8 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
 
                 swapResult.amountOut =
                     lastToken0 === path[path.length - 1]
-                        ? parsedEvent.args['amount0Out']
-                        : parsedEvent.args['amount1Out'];
+                        ? (parsedEvent.args['amount0Out'] as BigNumber).toBigInt()
+                        : (parsedEvent.args['amount1Out'] as BigNumber).toBigInt();
             }
         }
 
@@ -228,12 +230,12 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
                             // pull out the balanceOf calls
                             const initialBalance = BigNumber.from(balanceOfCalls[0].returndata);
                             const finalBalance = BigNumber.from(balanceOfCalls[balanceOfCalls.length - 1].returndata);
-                            swapResult.amountOut = finalBalance.sub(initialBalance);
+                            swapResult.amountOut = finalBalance.sub(initialBalance).toBigInt();
                             break;
                         case 'eth':
                             const calls = node.children.filter((v) => v.type === 'call');
 
-                            swapResult.amountOut = calls[calls.length - 1].value;
+                            swapResult.amountOut = calls[calls.length - 1].value.toBigInt();
                             break;
                     }
                 }

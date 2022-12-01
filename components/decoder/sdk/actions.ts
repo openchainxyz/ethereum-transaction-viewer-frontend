@@ -1,5 +1,3 @@
-import { BigNumber } from 'ethers';
-
 export const NATIVE_TOKEN = 'native_token';
 
 export type BaseAction = {
