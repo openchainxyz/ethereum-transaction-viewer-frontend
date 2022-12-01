@@ -1,24 +1,23 @@
-import { decode } from '../decoder';
-import TreeView from '@mui/lab/TreeView';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import * as React from 'react';
-import { TraceTreeItem } from '../../trace/TraceTreeItem';
-import { DecoderChainAccess, DecoderInput, DecoderOutput, DecoderState, getNodeId, MetadataRequest, ProviderDecoderChainAccess } from '../types';
-import { fetchDefiLlamaPrices, PriceMetadata, PriceMetadataContext } from '../../metadata/prices';
-import { fetchTokenMetadata, TokenMetadata, TokenMetadataContext } from '../../metadata/tokens';
-import { LabelMetadataContext } from '../../metadata/labels';
-import { useContext } from 'react';
-import { TraceEntryCall, TraceResponse, TraceEntryLog } from '../../api';
-import { TraceMetadata } from '../../types';
-import { ChainConfigContext } from '../../Chains';
-import { TransactionMetadataContext } from '../../metadata/transaction';
-import { BaseProvider } from '@ethersproject/providers';
-import { Log } from '@ethersproject/abstract-provider';
-import { findAffectedContract } from '../../helpers';
-import * as ethers from 'ethers';
 import { Interface } from '@ethersproject/abi';
+import { Log } from '@ethersproject/abstract-provider';
+import { BaseProvider } from '@ethersproject/providers';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TreeView from '@mui/lab/TreeView';
+import * as ethers from 'ethers';
 import { BigNumber } from 'ethers';
+import * as React from 'react';
+import { useContext } from 'react';
+import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../../api';
+import { ChainConfigContext } from '../../Chains';
+import { findAffectedContract } from '../../helpers';
+import { fetchDefiLlamaPrices, PriceMetadataContext } from '../../metadata/prices';
+import { fetchTokenMetadata, TokenMetadataContext } from '../../metadata/tokens';
+import { TransactionMetadataContext } from '../../metadata/transaction';
+import { TraceTreeItem } from '../../trace/TraceTreeItem';
+import { TraceMetadata } from '../../types';
+import { decode } from '../decoder';
+import { DecoderInputTraceExt, DecoderOutput, getNodeId, MetadataRequest, ProviderDecoderChainAccess } from '../types';
 import { format } from './formatter';
 
 export type DecodeTreeProps = {
@@ -37,7 +36,6 @@ export const DecodeTree = (props: DecodeTreeProps) => {
 
     React.useEffect(() => {
         const access = new ProviderDecoderChainAccess(props.provider);
-
 
         let logIndex = 0;
         let indexToPath: Record<number, string> = {};
@@ -74,7 +72,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
             return ourLogs;
         };
 
-        const remap = (node: TraceEntryCall, parentAbi?: Interface): DecoderInput => {
+        const remap = (node: TraceEntryCall, parentAbi?: Interface): DecoderInputTraceExt => {
             let thisAbi = new Interface([
                 ...props.traceMetadata.abis[node.to][node.codehash].fragments,
                 ...(parentAbi?.fragments || []),
@@ -99,7 +97,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                 value: BigNumber.from(node.value),
                 calldata: ethers.utils.arrayify(node.input),
 
-                status: node.status == 1,
+                failed: node.status !== 1,
                 logs: logs,
 
                 returndata: ethers.utils.arrayify(node.output),

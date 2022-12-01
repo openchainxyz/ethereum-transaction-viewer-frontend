@@ -15,7 +15,29 @@ export interface TransferAction {
     to: string;
 
     token: string;
-    amount: BigNumber;
+    amount: bigint;
+}
+
+export interface MintERC20Action {
+    type: 'mint-erc20';
+
+    operator: string;
+
+    to: string;
+
+    token: string;
+    amount: bigint;
+}
+
+export interface BurnERC20Action {
+    type: 'burn-erc20';
+
+    operator: string;
+
+    from: string;
+
+    token: string;
+    amount: bigint;
 }
 
 export type SwapAction = {
@@ -30,10 +52,10 @@ export type SwapAction = {
     tokenIn: string;
     tokenOut: string;
 
-    amountIn?: BigNumber;
-    amountInMax?: BigNumber;
-    amountOut?: BigNumber;
-    amountOutMin?: BigNumber;
+    amountIn?: bigint;
+    amountInMax?: bigint;
+    amountOut?: bigint;
+    amountOutMin?: bigint;
 };
 
 export type ENSRegisterAction = {
@@ -59,7 +81,7 @@ export type SupplyAction = {
 
     supplyToken: string;
 
-    amount: BigNumber;
+    amount: bigint;
 }
 
 export type WrapNativeTokenAction = {
@@ -96,7 +118,9 @@ export type MintNFTAction = {
 
 
 export type Action =
-    TransferAction
+    MintERC20Action
+    | BurnERC20Action
+    | TransferAction
     | SwapAction
     | ENSRegisterAction
     | WrapNativeTokenAction

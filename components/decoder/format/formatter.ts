@@ -8,6 +8,8 @@ import { WrappedNativeTokenFormatter } from "./wrapped";
 const allFormatters: Record<Action['type'], Formatter<any>> = {
     'swap': new SwapFormatter(),
     'ens-register': new ENSFormatter(),
+    'mint-erc20': new TransferFormatter(),
+    'burn-erc20': new TransferFormatter(),
     'transfer': new TransferFormatter(),
     'wrap-native-token': new WrappedNativeTokenFormatter(),
     'unwrap-native-token': new WrappedNativeTokenFormatter(),

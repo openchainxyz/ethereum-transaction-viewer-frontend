@@ -15,7 +15,7 @@ export class ENSDecoder extends Decoder<ENSRegisterAction> {
     };
 
     constructor() {
-        super('ens');
+        super();
     }
 
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<ENSRegisterAction | null> {
