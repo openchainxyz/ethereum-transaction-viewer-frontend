@@ -4,7 +4,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import * as React from 'react';
 import { TraceTreeItem } from '../../trace/TraceTreeItem';
-import { DecoderChainAccess, DecoderInput, DecoderOutput, DecoderState, getNodeId, MetadataRequest } from '../types';
+import { DecoderChainAccess, DecoderInput, DecoderOutput, DecoderState, getNodeId, MetadataRequest, ProviderDecoderChainAccess } from '../types';
 import { fetchDefiLlamaPrices, PriceMetadata, PriceMetadataContext } from '../../metadata/prices';
 import { fetchTokenMetadata, TokenMetadata, TokenMetadataContext } from '../../metadata/tokens';
 import { LabelMetadataContext } from '../../metadata/labels';
@@ -14,7 +14,7 @@ import { TraceMetadata } from '../../types';
 import { ChainConfigContext } from '../../Chains';
 import { TransactionMetadataContext } from '../../metadata/transaction';
 import { BaseProvider } from '@ethersproject/providers';
-import { Log, Provider } from '@ethersproject/abstract-provider';
+import { Log } from '@ethersproject/abstract-provider';
 import { findAffectedContract } from '../../helpers';
 import * as ethers from 'ethers';
 import { Interface } from '@ethersproject/abi';
@@ -26,27 +26,6 @@ export type DecodeTreeProps = {
     traceResult: TraceResponse;
     traceMetadata: TraceMetadata;
 };
-
-class ProviderDecoderChainAccess implements DecoderChainAccess {
-    private provider: Provider;
-    private cache: Record<string, Record<string, string>>
-
-    constructor(provider: Provider) {
-        this.provider = provider;
-        this.cache = {};
-    }
-
-
-    async getStorageAt(address: string, slot: string): Promise<string> {
-        if (!this.cache[address]) {
-            this.cache[address] = {};
-        }
-        if (!this.cache[address][slot]) {
-            this.cache[address][slot] = await this.provider.getStorageAt(address, slot);
-        }
-        return this.cache[address][slot];
-    }
-}
 
 export const DecodeTree = (props: DecodeTreeProps) => {
     const priceMetadata = useContext(PriceMetadataContext);
