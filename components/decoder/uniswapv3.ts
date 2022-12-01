@@ -1,52 +1,59 @@
-import { DecodeFormatOpts, Decoder, DecoderInput, DecoderState, hasSelector, hasTopic } from './types';
-import { EventFragment, FunctionFragment } from '@ethersproject/abi/lib';
-import humanizeDuration from 'humanize-duration';
-import { NATIVE_TOKEN, SwapAction } from './actions';
-import { ethers } from 'ethers';
-import { DateTime } from 'luxon';
-import { Tooltip } from '@mui/material';
-import {Log} from "@ethersproject/abstract-provider";
-import {ENSRegisterAction} from "./ens";
+import { Result } from '@ethersproject/abi/lib';
+import { SwapAction } from './actions';
+import { CallDecoder, DecoderInput, DecoderState, flattenLogs, getCalls, hasReceiptExt, hasTraceExt, isEqualAddress } from './types';
 
-export type UniswapV3SwapAction = SwapAction & {
-};
+const swapEventSignature = `event Swap(
+    address indexed sender,
+    address indexed recipient,
+    int256 amount0,
+    int256 amount1,
+    uint160 sqrtPriceX96,
+    uint128 liquidity,
+    int24 tick
+);`
 
-export class UniswapV3PoolSwapDecoder extends Decoder<UniswapV3SwapAction> {
-    functions = {
-        'register(string name, address owner, uint256 duration, bytes32 secret)': {
-            hasResolver: false,
-        },
-        'registerWithConfig(string name, address owner, uint256 duration, bytes32 secret, address resolver, address addr)':
-            {
-                hasResolver: true,
-            },
-    };
-
+export class UniswapV3RouterSwapDecoder extends CallDecoder<SwapAction> {
     constructor() {
-        super('uniswap-v3-pool-swap');
+        super();
+
+        this.functions['exactInput(tuple(bytes path, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum) params) payable returns (uint256 amountOut)'] = this.decodeExactInput;
     }
 
-    decodeCall(state: DecoderState, node: DecoderInput): UniswapV3SwapAction | null {
-        if (state.isConsumed(node)) return null;
-
-        return null;
+    async isTargetContract(state: DecoderState, address: string): Promise<boolean> {
+        return isEqualAddress(address, '0xE592427A0AEce92De3Edee1F18E0157C05861564');
     }
 
-    decodeLog(state: DecoderState, node: DecoderInput, log: Log): UniswapV3SwapAction | null {
-        const swapEvent = EventFragment.from(`Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)`);
+    async decodeExactInput(state: DecoderState, node: DecoderInput, input: Result, output: Result | null): Promise<SwapAction> {
+        const path = input['params']['path'];
+        const amountIn = input['params']['amountIn'];
+        const amountOutMin = input['params']['amountOutMinimum'];
+        const recipient = input['params']['recipient'];
 
-        if (state.isConsumed(log)) return null;
+        const tokenIn = "0x" + path.substring(2, 42);
+        const tokenOut = "0x" + path.substring(path.length - 40);
 
-        if (!hasTopic(log, swapEvent)) return null;
-
-        const decoded = this.decodeEventWithFragment(log, swapEvent);
-
-        return {
-            type: this.name,
+        const result: SwapAction = {
+            type: 'swap',
+            exchange: 'uniswap-v3',
             operator: node.from,
-            recipient: decoded.args['recipient'],
-            tokenIn: path[0],
-            tokenOut: path[path.length - 1],
+            recipient: recipient,
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            amountIn: amountIn,
+            amountOutMin: amountOutMin,
+        };
+
+        if (hasReceiptExt(node)) {
+            const logs = flattenLogs(node);
+
+            const swapLog = this.decodeEventWithFragment(logs[logs.length - 1], swapEventSignature);
+
+            const amount0 = swapLog.args['amount0'].toBigInt();
+            const amount1 = swapLog.args['amount1'].toBigInt();
+
+            result.amountOut = amount0 < 0n ? amount0 : amount1;
         }
+
+        return result;
     }
 }

@@ -1,18 +1,8 @@
-import { defaultAbiCoder, EventFragment, FunctionFragment, Result } from '@ethersproject/abi/lib';
-import { Log } from '@ethersproject/abstract-provider';
-import { Tooltip } from '@mui/material';
-import { BigNumber, BigNumberish, BytesLike, ethers } from 'ethers';
+import { defaultAbiCoder, EventFragment, Fragment, FunctionFragment, Interface, Result } from '@ethersproject/abi/lib';
+import { Log, Provider, TransactionRequest } from '@ethersproject/abstract-provider';
+import { BigNumber, BytesLike, ethers } from 'ethers';
 import { LogDescription, ParamType } from 'ethers/lib/utils';
-import * as React from 'react';
-import WithSeparator from 'react-with-separator';
-import { ChainConfig } from '../Chains';
-import { DataRenderer } from '../DataRenderer';
-import { formatUsd } from '../helpers';
-import { PriceMetadata } from '../metadata/prices';
-import { TokenMetadata } from '../metadata/tokens';
-import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
-import { Provider } from '@ethersproject/abstract-provider';
-import { Action, BaseAction, NATIVE_TOKEN } from './actions';
+import { Action, BaseAction } from './actions';
 
 export const hasSelector = (calldata: BytesLike, selector: string | FunctionFragment) => {
     return (
@@ -31,6 +21,8 @@ export const isEqualAddress = (a: string, b: string): boolean => {
 
 export interface DecoderChainAccess {
     getStorageAt(address: string, slot: string): Promise<string>;
+
+    call(tx: TransactionRequest): Promise<string>;
 }
 
 export interface DecoderInput {
@@ -66,6 +58,31 @@ export const hasTraceExt = (node: DecoderInput): node is DecoderInputTraceExt =>
     return (node as DecoderInputTraceExt).returndata !== undefined;
 }
 
+export const getCalls = (node: DecoderInputTraceExt): DecoderInputTraceExt[] => {
+    return node.children.filter(node => node.type === 'call');
+}
+
+export const flattenLogs = (node: DecoderInputReceiptExt): Log[] => {
+    if (!hasTraceExt(node)) {
+        return node.logs;
+    }
+    const result: Log[] = [];
+
+    const visit = (node: DecoderInputTraceExt) => {
+        node.childOrder.forEach(([type, val]) => {
+            if (type === 'log') {
+                result.push(node.logs[val]);
+            } else {
+                visit(node.children[val]);
+            }
+        });
+    };
+
+    visit(node);
+
+    return result;
+}
+
 export type DecoderOutput = {
     node: DecoderInput | Log;
     results: Action[];
@@ -95,6 +112,10 @@ export class ProviderDecoderChainAccess implements DecoderChainAccess {
     constructor(provider: Provider) {
         this.provider = provider;
         this.cache = {};
+    }
+
+    async call(transaction: TransactionRequest): Promise<string> {
+        return await this.provider.call(transaction);
     }
 
 
@@ -142,6 +163,18 @@ export class DecoderState {
         }
 
         return this.decoded.get(input)!;
+    }
+
+    public async call(signature: string, address: string, args: any[]): Promise<Result> {
+        const fragment = Fragment.from(signature);
+        const intf = new Interface([
+            fragment,
+        ]);
+        
+        return intf.decodeFunctionResult(fragment.name, await this.access.call({
+            to: address,
+            data: intf.encodeFunctionData(fragment.name, args),
+        }));
     }
 
     requestTokenMetadata(token: string) {

@@ -13,7 +13,7 @@ type UniswapDeployment = {
 
 const uniswaps: UniswapDeployment[] = [
     {
-        name: 'Uniswap V2',
+        name: 'uniswap-v2',
         factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
         initcodeHash: '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f',
         routers: [
@@ -22,7 +22,7 @@ const uniswaps: UniswapDeployment[] = [
         ],
     },
     {
-        name: 'SushiSwap',
+        name: 'sushiswap',
         factory: '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
         initcodeHash: '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303',
         routers: [
@@ -144,6 +144,7 @@ export class UniswapV2RouterSwapDecoder extends Decoder<SwapAction> {
 
         const swapResult: SwapAction = {
             type: 'swap',
+            exchange: routerInfo.name,
             operator: node.from,
             recipient: inputs['to'],
             tokenIn: path[0],
@@ -303,8 +304,8 @@ export class UniswapV2PairSwapDecoder extends CallDecoder<SwapAction> {
     }
 
     async getDeploymentForPair(state: DecoderState, address: string): Promise<[string, string, UniswapDeployment] | null> {
-        const token0 = "0x" + (await state.access.getStorageAt(address, "0x06")).substring(26);
-        const token1 = "0x" + (await state.access.getStorageAt(address, "0x07")).substring(26);
+        const [token0] = await state.call('function token0() returns (address)', address, []);
+        const [token1] = await state.call('function token1() returns (address)', address, []);
 
         const deployment = uniswaps.find(deployment => {
             const pairAddress = computePairAddress(deployment.factory, deployment.initcodeHash, token0, token1);
@@ -374,6 +375,7 @@ export class UniswapV2PairSwapDecoder extends CallDecoder<SwapAction> {
 
         const action: SwapAction = {
             type: 'swap',
+            exchange: deployment.name,
             operator: node.from,
             recipient: inputs['to'],
             tokenIn: tokenIn,

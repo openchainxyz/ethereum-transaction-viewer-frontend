@@ -12,9 +12,11 @@ import {
     hasTraceExt,
     MetadataRequest
 } from './types';
-import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswap';
+import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswapv2';
 import { CometSupplyDecoder } from './comet';
 import { WrappedNativeTokenDecoder } from './wrapped';
+import { CurveSwapDecoder } from './curve';
+import { UniswapV3RouterSwapDecoder } from './uniswapv3';
 
 const allDecodersArray: Decoder<any>[] = [];
 
@@ -27,6 +29,8 @@ registerDecoder(new UniswapV2PairSwapDecoder());
 registerDecoder(new ENSDecoder());
 registerDecoder(new CometSupplyDecoder());
 registerDecoder(new WrappedNativeTokenDecoder());
+registerDecoder(new CurveSwapDecoder());
+registerDecoder(new UniswapV3RouterSwapDecoder());
 
 // must come last!
 registerDecoder(new TransferDecoder());

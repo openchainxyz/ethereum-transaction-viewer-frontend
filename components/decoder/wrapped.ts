@@ -36,7 +36,7 @@ export class WrappedNativeTokenDecoder extends CallDecoder<WrapNativeTokenAction
 
     async decodeUnwrap(state: DecoderState, node: DecoderInput, input: Result, output: Result | null): Promise<UnwrapNativeTokenAction> {
         if (hasTraceExt(node)) {
-            state.consumeAll(node);
+            state.consumeAllRecursively(node);
         }
 
         state.requestTokenMetadata(node.to);

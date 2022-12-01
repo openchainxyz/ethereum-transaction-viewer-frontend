@@ -8,8 +8,6 @@ export class TransferDecoder extends Decoder<TransferAction> {
 
         if (node.value.isZero()) return null;
 
-        console.log('decoding transfer', node);
-
         return {
             type: 'transfer',
             operator: node.from,
