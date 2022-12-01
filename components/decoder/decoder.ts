@@ -12,6 +12,7 @@ import {
     MetadataRequest
 } from './types';
 import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from './uniswap';
+import { CometSupplyDecoder } from './comet';
 
 const allDecoders: Record<string, Decoder<BaseAction>> = {};
 const allDecodersArray: Decoder<BaseAction>[] = [];
@@ -24,6 +25,7 @@ export const registerDecoder = (decoder: Decoder<BaseAction>) => {
 registerDecoder(new UniswapV2RouterSwapDecoder());
 registerDecoder(new UniswapV2PairSwapDecoder());
 registerDecoder(new ENSDecoder());
+registerDecoder(new CometSupplyDecoder());
 
 // must come last!
 registerDecoder(new TransferDecoder());

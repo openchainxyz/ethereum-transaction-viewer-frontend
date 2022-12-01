@@ -11,6 +11,7 @@ import { formatUsd } from '../helpers';
 import { PriceMetadata } from '../metadata/prices';
 import { TokenMetadata } from '../metadata/tokens';
 import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
+import { Provider } from '@ethersproject/abstract-provider';
 import { Action, BaseAction, NATIVE_TOKEN } from './actions';
 
 export const hasSelector = (calldata: BytesLike, selector: string | FunctionFragment) => {
@@ -82,6 +83,27 @@ export const getNodeId = (node: DecoderInput | Log) => {
         return 'log:' + node.transactionHash + '.' + node.logIndex;
     }
 };
+
+export class ProviderDecoderChainAccess implements DecoderChainAccess {
+    private provider: Provider;
+    private cache: Record<string, Record<string, string>>
+
+    constructor(provider: Provider) {
+        this.provider = provider;
+        this.cache = {};
+    }
+
+
+    async getStorageAt(address: string, slot: string): Promise<string> {
+        if (!this.cache[address]) {
+            this.cache[address] = {};
+        }
+        if (!this.cache[address][slot]) {
+            this.cache[address][slot] = await this.provider.getStorageAt(address, slot);
+        }
+        return this.cache[address][slot];
+    }
+}
 
 export class DecoderState {
     access: DecoderChainAccess;

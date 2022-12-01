@@ -4,8 +4,8 @@ import {
     Decoder,
     DecoderState,
     DecoderInput,
-    DecodeFormatOpts,
     hasSelector,
+    hasTraceExt,
 } from "./types";
 import { SupplyAction } from "./actions";
 
@@ -21,28 +21,9 @@ export class CometSupplyDecoder extends Decoder<SupplyAction> {
         'supplyFrom(address from,address dst,address asset,uint amount)',
     ];
 
-    constructor() {
-        super('comet-supply');
-    }
-
-    format(result: SupplyAction, opts: DecodeFormatOpts): JSX.Element {
-        const keys = [];
-        const values = [];
-
-        keys.push('operator');
-        values.push(this.formatAddress(result.operator));
-
-        keys.push('supplier');
-        values.push(this.formatAddress(result.supplier));
-
-        keys.push('amount');
-        values.push(this.formatTokenAmount(opts, result.supplyToken, result.amount));
-
-        return this.renderResult('supply', '#645e9d', keys, values);
-    }
-
     async decodeCall(state: DecoderState, node: DecoderInput): Promise<SupplyAction | null> {
         if (state.isConsumed(node)) return null;
+        if (node.type !== 'call') return null;
 
         if (!cTokenAddresses.has(node.to)) return null;
 
@@ -52,14 +33,14 @@ export class CometSupplyDecoder extends Decoder<SupplyAction> {
 
         if (functionName === undefined) return null;
 
-        if (node.type !== 'call') return null;
+        console.log("input", node);
 
         const [inputs] = this.decodeFunctionWithFragment(node, FunctionFragment.from(functionName));
 
         state.consume(node);
 
         // Supply implies downstream transfer call, need to consume
-        if (node.children) {
+        if (hasTraceExt(node)) {
             // We know that the first external call from cToken supply is a delegatecall to Comet supply
             const cometSupplyDelegateCall = node.children[0]!;
             const transferFromCall = cometSupplyDelegateCall.children!.filter((v) => v.type === 'call')[0];
@@ -74,7 +55,7 @@ export class CometSupplyDecoder extends Decoder<SupplyAction> {
         }
 
         const supplyResult: SupplyAction = {
-            type: this.name,
+            type: 'supply',
             operator: node.from,
             supplier: functionName === 'supplyFrom(address from,address dst,address asset,uint amount)'
                 ? inputs['from']

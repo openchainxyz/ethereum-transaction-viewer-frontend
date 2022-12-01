@@ -48,5 +48,17 @@ export type ENSRegisterAction = {
     addr?: string;
 };
 
+export type SupplyAction = {
+    type: 'supply';
+
+    operator: string;
+
+    supplier: string;
+
+    supplyToken: string;
+
+    amount: BigNumber;
+}
+
 
 export type Action = TransferAction | SwapAction | ENSRegisterAction;
