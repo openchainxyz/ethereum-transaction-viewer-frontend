@@ -23,7 +23,7 @@ import {
     TraceEntrySstore,
     TraceResponse,
 } from '../api';
-import {PreimageMetadataContext} from "../metadata/preimages";
+import { PreimageMetadataContext } from '../metadata/preimages';
 
 type TraceTreeProps = {
     traceResult: TraceResponse;
@@ -87,7 +87,7 @@ export const TraceTree = (props: TraceTreeProps) => {
             defaultExpanded = defaultExpanded.filter((v) => v.split('.').length <= maxLength);
             maxLength--;
         }
-        
+
         const preimages = {
             ...traceResult.preimages,
         };
@@ -226,8 +226,8 @@ export const TraceTree = (props: TraceTreeProps) => {
     };
 
     let requestStorageMetadata = (chain: string, affectedNode: TraceEntryCall, actualNode: TraceEntryCall) => {
-        doApiRequest<StorageResponse>(`/api/v1/storage/${chain}/${actualNode.to}/${actualNode.codehash}`).then(
-            (res) => {
+        doApiRequest<StorageResponse>(`/api/v1/storage/${chain}/${actualNode.to}/${actualNode.codehash}`)
+            .then((res) => {
                 setStorageMetadata((prevMetadata: StorageMetadata) => {
                     let newMetadata = { ...prevMetadata };
 
@@ -420,10 +420,10 @@ export const TraceTree = (props: TraceTreeProps) => {
 
                     return newMetadata;
                 });
-            },
-        ).catch(e => {
-            console.log("failed to request storage metadata", e);
-        });
+            })
+            .catch((e) => {
+                console.log('failed to request storage metadata', e);
+            });
     };
 
     let recursivelyGenerateTree = (node: TraceEntry): JSX.Element => {

@@ -1,8 +1,8 @@
-import Tooltip from "@mui/material/Tooltip";
-import humanizeDuration from "humanize-duration";
-import { DateTime } from "luxon";
+import Tooltip from '@mui/material/Tooltip';
+import humanizeDuration from 'humanize-duration';
+import { DateTime } from 'luxon';
 import { ENSRegisterAction, NATIVE_TOKEN } from '@samczsun/transaction-decoder/lib/sdk/actions';
-import { DecodeFormatOpts, Formatter } from "./types";
+import { DecodeFormatOpts, Formatter } from './types';
 
 export class ENSFormatter extends Formatter<ENSRegisterAction> {
     format(result: ENSRegisterAction, opts: DecodeFormatOpts): JSX.Element {

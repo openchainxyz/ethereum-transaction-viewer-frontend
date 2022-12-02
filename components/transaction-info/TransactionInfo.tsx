@@ -108,9 +108,9 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
         );
     } else {
         if (!transactionMetadata.transaction.gasPrice) {
-            transactionMetadata.transaction.gasPrice = BigNumber.from("0");
+            transactionMetadata.transaction.gasPrice = BigNumber.from('0');
         }
-        
+
         gasPriceInfo = (
             <>
                 <TransactionAttribute name={'Gas Price'}>
@@ -243,10 +243,12 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
                     <TransactionAttributeRow>
                         <TransactionAttribute name={'Gas Used'}>
                             {transactionMetadata.receipt.gasUsed.toString()}/
-                            {transactionMetadata.transaction.gasLimit.toString()}&nbsp;({
-                                (transactionMetadata.receipt.gasUsed.toNumber() * 100
-                                / transactionMetadata.transaction.gasLimit.toNumber()).toPrecision(4)
-                            }%)
+                            {transactionMetadata.transaction.gasLimit.toString()}&nbsp;(
+                            {(
+                                (transactionMetadata.receipt.gasUsed.toNumber() * 100) /
+                                transactionMetadata.transaction.gasLimit.toNumber()
+                            ).toPrecision(4)}
+                            %)
                         </TransactionAttribute>
                         {gasPriceInfo}
                     </TransactionAttributeRow>

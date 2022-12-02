@@ -29,7 +29,7 @@ export type PriceMetadata = {
 
 export const defaultPriceMetadata = (): PriceMetadata => {
     return {
-        updater: () => { },
+        updater: () => {},
         status: {},
         prices: {},
     };

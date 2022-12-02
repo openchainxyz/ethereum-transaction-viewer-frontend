@@ -1,6 +1,6 @@
 import { UnwrapNativeTokenAction, WrapNativeTokenAction } from '@samczsun/transaction-decoder/lib/sdk/actions';
-import { DataRenderer } from "../DataRenderer";
-import { DecodeFormatOpts, Formatter } from "./types";
+import { DataRenderer } from '../DataRenderer';
+import { DecodeFormatOpts, Formatter } from './types';
 
 export class WrappedNativeTokenFormatter extends Formatter<WrapNativeTokenAction | UnwrapNativeTokenAction> {
     format(result: WrapNativeTokenAction | UnwrapNativeTokenAction, opts: DecodeFormatOpts): JSX.Element {

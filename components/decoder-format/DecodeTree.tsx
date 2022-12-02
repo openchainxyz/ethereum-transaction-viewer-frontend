@@ -21,12 +21,14 @@ import { defaultDecoders } from '@samczsun/transaction-decoder/lib/decoders';
 import { TransferDecoder } from '@samczsun/transaction-decoder/lib/decoders/fallback';
 import { DecoderManager } from '@samczsun/transaction-decoder/lib/sdk/decoder';
 import { getNodeId } from '@samczsun/transaction-decoder/lib/sdk/utils';
-import { DecoderOutput, MetadataRequest, ProviderDecoderChainAccess, DecoderInputTraceExt } from '@samczsun/transaction-decoder/lib/sdk/types';
+import {
+    DecoderOutput,
+    MetadataRequest,
+    ProviderDecoderChainAccess,
+    DecoderInputTraceExt,
+} from '@samczsun/transaction-decoder/lib/sdk/types';
 
-const decoderManager = new DecoderManager(
-    defaultDecoders,
-    new TransferDecoder(),
-);
+const decoderManager = new DecoderManager(defaultDecoders, new TransferDecoder());
 
 export type DecodeTreeProps = {
     provider: BaseProvider;
@@ -112,7 +114,9 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                 children: children,
 
                 childOrder: node.children
-                    .filter((node): node is TraceEntryLog | TraceEntryCall => node.type === 'log' || node.type === 'call')
+                    .filter(
+                        (node): node is TraceEntryLog | TraceEntryCall => node.type === 'log' || node.type === 'call',
+                    )
                     .map((v) => {
                         if (v.type === 'log') {
                             return ['log', logs.findIndex((log) => log.logIndex === v.path)];
@@ -126,12 +130,11 @@ export const DecodeTree = (props: DecodeTreeProps) => {
         };
 
         const input = remap(props.traceResult.entrypoint);
-        console.log("remapped input", input);
-        decoderManager.decode(input, access)
-            .then(data => {
-                console.log("decoded output", data);
-                setData(data)
-            });
+        console.log('remapped input', input);
+        decoderManager.decode(input, access).then((data) => {
+            console.log('decoded output', data);
+            setData(data);
+        });
     }, [props.traceResult, props.traceMetadata]);
 
     let children;

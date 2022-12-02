@@ -1,14 +1,14 @@
-import Tooltip from "@mui/material/Tooltip";
+import Tooltip from '@mui/material/Tooltip';
 import { NATIVE_TOKEN } from '@samczsun/transaction-decoder/lib/sdk/actions';
-import { BigNumber, BigNumberish, ethers } from "ethers";
-import React from "react";
-import WithSeparator from "react-with-separator";
-import { ChainConfig } from "../Chains";
-import { DataRenderer } from "../DataRenderer";
-import { formatUsd } from "../helpers";
-import { PriceMetadata } from "../metadata/prices";
-import { TokenMetadata } from "../metadata/tokens";
-import { TraceTreeNodeLabel } from "../trace/TraceTreeItem";
+import { BigNumber, BigNumberish, ethers } from 'ethers';
+import React from 'react';
+import WithSeparator from 'react-with-separator';
+import { ChainConfig } from '../Chains';
+import { DataRenderer } from '../DataRenderer';
+import { formatUsd } from '../helpers';
+import { PriceMetadata } from '../metadata/prices';
+import { TokenMetadata } from '../metadata/tokens';
+import { TraceTreeNodeLabel } from '../trace/TraceTreeItem';
 
 export type DecodeFormatOpts = {
     timestamp: number;
@@ -19,7 +19,6 @@ export type DecodeFormatOpts = {
 
 export abstract class Formatter<T> {
     abstract format(result: T, opts: DecodeFormatOpts): JSX.Element;
-
 
     formatAddress(addr: string): JSX.Element {
         return <DataRenderer preferredType={'address'} data={addr} />;
@@ -42,11 +41,7 @@ export abstract class Formatter<T> {
             }
             if (tokenInfo.symbol !== undefined) {
                 address = (
-                    <DataRenderer
-                        labels={{ [token]: tokenInfo.symbol }}
-                        preferredType={'address'}
-                        data={token}
-                    />
+                    <DataRenderer labels={{ [token]: tokenInfo.symbol }} preferredType={'address'} data={token} />
                 );
             }
         }
@@ -58,7 +53,11 @@ export abstract class Formatter<T> {
                 <>
                     &nbsp;(
                     <Tooltip
-                        title={currentPrice ? formatUsd(BigNumber.from(amount).mul(currentPrice)) + ' today' : 'Current price unknown'}
+                        title={
+                            currentPrice
+                                ? formatUsd(BigNumber.from(amount).mul(currentPrice)) + ' today'
+                                : 'Current price unknown'
+                        }
                     >
                         <span>{formatUsd(BigNumber.from(amount).mul(historicalPrice))}</span>
                     </Tooltip>

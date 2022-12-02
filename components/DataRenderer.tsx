@@ -5,7 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import { useContext } from 'react';
 import { ChainConfig, ChainConfigContext } from './Chains';
 import { LabelMetadataContext } from './metadata/labels';
-import { PreimageMetadataContext } from "./metadata/preimages";
+import { PreimageMetadataContext } from './metadata/preimages';
 import { SpanIconButton } from './SpanIconButton';
 
 const stringifyValue = (paramType: ParamType, value: any): string => {
@@ -215,13 +215,7 @@ export const DataRenderer = (props: DataRendererProps) => {
             );
         } else if (paramType.baseType === 'bytes' && hasPreimage && !wasIndexed) {
             rendered = (
-                <NoMaxWidthTooltip
-                    arrow
-                    placement={'top'}
-                    title={
-                        <span>{ethers.utils.keccak256(decodedData)}</span>
-                    }
-                >
+                <NoMaxWidthTooltip arrow placement={'top'} title={<span>{ethers.utils.keccak256(decodedData)}</span>}>
                     <span>keccak256({rendered})</span>
                 </NoMaxWidthTooltip>
             );

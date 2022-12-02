@@ -7,7 +7,7 @@ import { formatEther } from 'ethers/lib/utils';
 import * as React from 'react';
 import { useContext } from 'react';
 import { TraceEntryCall, TraceEntryLog, TraceEntrySload, TraceEntrySstore, TraceResponse } from '../api';
-import { guessFragment } from "../calldata-guesser/guess";
+import { guessFragment } from '../calldata-guesser/guess';
 import { ChainConfigContext } from '../Chains';
 import { DataRenderer } from '../DataRenderer';
 import { EncodedABITextField } from '../EncodedABITextField';
@@ -46,7 +46,7 @@ type CallTraceTreeItemProps = {
 
 export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
     const { traceResult, traceMetadata, node, showStorageChanges, setShowStorageChanges, children } = props;
-    
+
     const chainConfig = useContext(ChainConfigContext);
 
     const [functionFragment, setFunctionFragment, parsedFunctionFragment] = useFunctionFragment(
@@ -62,7 +62,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
             try {
                 return guessFragment(node.input);
             } catch (e) {
-                console.log("failed to guess fragment", e)
+                console.log('failed to guess fragment', e);
                 return null;
             }
         })(),
@@ -323,11 +323,7 @@ export const CallTraceTreeItem = (props: CallTraceTreeItemProps) => {
 
     let value = BigNumber.from(node.value);
     if (value.gt(0)) {
-        valueNode = (
-            <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${
-                chainConfig.nativeSymbol
-            }]`}</span>
-        );
+        valueNode = <span style={{ color: '#c94922' }}>{`[${formatEther(value)} ${chainConfig.nativeSymbol}]`}</span>;
     }
 
     let treeContent = (

@@ -28,7 +28,11 @@ import { TraceTree } from '../../components/trace/TraceTree';
 import { defaultLabelMetadata, LabelMetadata, LabelMetadataContext } from '../../components/metadata/labels';
 import { TransactionMetadata, TransactionMetadataContext } from '../../components/metadata/transaction';
 import { doApiRequest, TraceEntry, TraceResponse } from '../../components/api';
-import { defaultPreimageMetadata, PreimageMetadata, PreimageMetadataContext } from "../../components/metadata/preimages";
+import {
+    defaultPreimageMetadata,
+    PreimageMetadata,
+    PreimageMetadataContext,
+} from '../../components/metadata/preimages';
 
 export default function TransactionViewer() {
     console.log('rendering main view');
@@ -58,7 +62,7 @@ export default function TransactionViewer() {
         const chainConfig = await getChain(chain);
         if (!chainConfig) return;
 
-        console.log(chainConfig)
+        console.log(chainConfig);
         setChainConfig(chainConfig);
 
         const provider = new JsonRpcProvider(chainConfig.rpcUrl);
@@ -113,8 +117,7 @@ export default function TransactionViewer() {
                 let customLabels: Record<string, Record<string, string>> = {};
                 try {
                     customLabels = JSON.parse(localStorage.getItem('pref:labels') || '{}');
-                } catch {
-                }
+                } catch {}
                 if (!(chain in customLabels)) {
                     customLabels[chain] = {};
                 }

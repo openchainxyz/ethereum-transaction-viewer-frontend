@@ -1,6 +1,6 @@
-import { DataRenderer } from "../DataRenderer";
+import { DataRenderer } from '../DataRenderer';
 import { SwapAction } from '@samczsun/transaction-decoder/lib/sdk/actions';
-import { DecodeFormatOpts, Formatter } from "./types";
+import { DecodeFormatOpts, Formatter } from './types';
 
 export class SwapFormatter extends Formatter<SwapAction> {
     format(result: SwapAction, opts: DecodeFormatOpts): JSX.Element {

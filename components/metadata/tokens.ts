@@ -19,7 +19,7 @@ export type TokenMetadata = {
 
 export const defaultTokenMetadata = (): TokenMetadata => {
     return {
-        updater: () => { },
+        updater: () => {},
         status: SupportedChains.reduce((o, chain) => {
             return {
                 ...o,

@@ -8,7 +8,13 @@ import { BigNumber, ethers } from 'ethers';
 import { findAffectedContract, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { ChainConfig, ChainConfigContext } from '../Chains';
-import { fetchDefiLlamaPrices, getPriceOfToken, PriceMetadata, PriceMetadataContext, toDefiLlamaId } from '../metadata/prices';
+import {
+    fetchDefiLlamaPrices,
+    getPriceOfToken,
+    PriceMetadata,
+    PriceMetadataContext,
+    toDefiLlamaId,
+} from '../metadata/prices';
 import { fetchTokenMetadata, TokenMetadata, TokenMetadataContext } from '../metadata/tokens';
 import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
 import { BaseProvider } from '@ethersproject/providers';
@@ -45,7 +51,11 @@ function Row(props: RowProps) {
     const changeInPriceRendered = valueInfo.hasMissingPrices ? (
         <span>Loading...</span>
     ) : (
-        <span style={{ color: valueInfo.totalValueChange < 0n ? '#ed335f' : valueInfo.totalValueChange > 0n ? '#067034' : '' }}>
+        <span
+            style={{
+                color: valueInfo.totalValueChange < 0n ? '#ed335f' : valueInfo.totalValueChange > 0n ? '#067034' : '',
+            }}
+        >
             {formatUsd(valueInfo.totalValueChange)}
         </span>
     );
@@ -71,7 +81,9 @@ function Row(props: RowProps) {
                 amountFormatted = ethers.utils.formatUnits(valueInfo.changePerToken[token], tokenInfo.decimals);
             }
             if (priceMetadata.status[priceId] === 'fetched') {
-                tokenPriceRendered = formatUsd(getPriceOfToken(priceMetadata, priceId, valueInfo.changePerToken[token], 'historical')!);
+                tokenPriceRendered = formatUsd(
+                    getPriceOfToken(priceMetadata, priceId, valueInfo.changePerToken[token], 'historical')!,
+                );
             }
 
             return (
@@ -222,7 +234,7 @@ const computeBalanceChanges = (
         }
     }
 
-    Object.values(changes).forEach(info => {
+    Object.values(changes).forEach((info) => {
         let hasMissingPrice = false;
         let changeInValue = 0n;
         Object.entries(info.changePerToken).forEach(([token, delta]) => {
@@ -240,7 +252,6 @@ const computeBalanceChanges = (
         info.hasMissingPrices = hasMissingPrice;
         info.totalValueChange = changeInValue;
     });
-
 
     return [changes, allTokens];
 };
@@ -279,7 +290,10 @@ export const ValueChange = (props: ValueChangeProps) => {
                             direction={sortOptions[0] === 'address' ? sortOptions[1] : 'asc'}
                             onClick={() => {
                                 setSortOptions((prevOptions) => {
-                                    return ['address', prevOptions[0] === 'address' && prevOptions[1] === 'asc' ? 'desc' : 'asc'];
+                                    return [
+                                        'address',
+                                        prevOptions[0] === 'address' && prevOptions[1] === 'asc' ? 'desc' : 'asc',
+                                    ];
                                 });
                             }}
                         >
@@ -292,7 +306,10 @@ export const ValueChange = (props: ValueChangeProps) => {
                             direction={sortOptions[0] === 'price' ? sortOptions[1] : 'asc'}
                             onClick={() => {
                                 setSortOptions((prevOptions) => {
-                                    return ['price', prevOptions[0] === 'price' && prevOptions[1] === 'asc' ? 'desc' : 'asc'];
+                                    return [
+                                        'price',
+                                        prevOptions[0] === 'price' && prevOptions[1] === 'asc' ? 'desc' : 'asc',
+                                    ];
                                 });
                             }}
                         >
@@ -303,23 +320,29 @@ export const ValueChange = (props: ValueChangeProps) => {
             </TableHead>
             <TableBody>
                 {Object.entries(changes)
-                    .sort(sortOptions[0] === 'address' ? (a, b) => {
-                        return sortOptions[1] === 'asc' ?
-                            a[0].localeCompare(b[0]) :
-                            b[0].localeCompare(a[0]);
-                    } : (a, b) => {
-                        if (!a[1].hasMissingPrices && !b[1].hasMissingPrices) {
-                            return sortOptions[1] === 'asc' ?
-                                (a[1].totalValueChange < b[1].totalValueChange ? -1 : 1) :
-                                (b[1].totalValueChange < a[1].totalValueChange ? -1 : 1);
-                        } else if (a[1].hasMissingPrices) {
-                            return sortOptions[1] === 'asc' ? -1 : 1;
-                        } else if (b[1].hasMissingPrices) {
-                            return sortOptions[1] === 'asc' ? 1 : -1;
-                        } else {
-                            return 0;
-                        }
-                    })
+                    .sort(
+                        sortOptions[0] === 'address'
+                            ? (a, b) => {
+                                  return sortOptions[1] === 'asc' ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]);
+                              }
+                            : (a, b) => {
+                                  if (!a[1].hasMissingPrices && !b[1].hasMissingPrices) {
+                                      return sortOptions[1] === 'asc'
+                                          ? a[1].totalValueChange < b[1].totalValueChange
+                                              ? -1
+                                              : 1
+                                          : b[1].totalValueChange < a[1].totalValueChange
+                                          ? -1
+                                          : 1;
+                                  } else if (a[1].hasMissingPrices) {
+                                      return sortOptions[1] === 'asc' ? -1 : 1;
+                                  } else if (b[1].hasMissingPrices) {
+                                      return sortOptions[1] === 'asc' ? 1 : -1;
+                                  } else {
+                                      return 0;
+                                  }
+                              },
+                    )
                     .map((entry) => {
                         return <Row key={entry[0]} address={entry[0]} changes={entry[1]} />;
                     })}

@@ -1,6 +1,6 @@
-import { DataRenderer } from "../DataRenderer";
+import { DataRenderer } from '../DataRenderer';
 import { BurnERC20Action, MintERC20Action, TransferAction } from '@samczsun/transaction-decoder/lib/sdk/actions';
-import { DecodeFormatOpts, Formatter } from "./types";
+import { DecodeFormatOpts, Formatter } from './types';
 
 export class TransferFormatter extends Formatter<MintERC20Action | BurnERC20Action | TransferAction> {
     format(result: MintERC20Action | BurnERC20Action | TransferAction, opts: DecodeFormatOpts): JSX.Element {
