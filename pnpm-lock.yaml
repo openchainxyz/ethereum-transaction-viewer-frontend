@@ -10,6 +10,7 @@ specifiers:
   '@mui/lab': 5.0.0-alpha.101
   '@mui/material': ^5.10.3
   '@mui/system': ^5.10.8
+  '@samczsun/abi-guesser': github:samczsun/abi-guesser
   '@samczsun/transaction-decoder': github:samczsun/transaction-decoder
   '@types/bn.js': ^5.1.1
   '@types/humanize-duration': ^3.27.1
@@ -47,6 +48,7 @@ dependencies:
   '@mui/lab': 5.0.0-alpha.101_csuey74pkaqs7dajvyv4snygm4
   '@mui/material': 5.10.3_vbxcdxy3bftsefaguotlgalomu
   '@mui/system': 5.10.8_wpm2ckkcb3o6jfqp3h4kjrjece
+  '@samczsun/abi-guesser': github.com/samczsun/abi-guesser/dc830986d2bf9ea0fc4507a980ab5e265ffb2b4c
   '@samczsun/transaction-decoder': github.com/samczsun/transaction-decoder/4a3ad8252610d21bdd24ee369e9e13d9037b45c9
   csstype: 3.1.1
   ethers: 5.7.1
@@ -4836,6 +4838,17 @@ packages:
   /yocto-queue/0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  github.com/samczsun/abi-guesser/dc830986d2bf9ea0fc4507a980ab5e265ffb2b4c:
+    resolution: {tarball: https://codeload.github.com/samczsun/abi-guesser/tar.gz/dc830986d2bf9ea0fc4507a980ab5e265ffb2b4c}
+    name: '@samczsun/abi-guesser'
+    version: 0.0.1
+    dependencies:
+      ethers: 5.7.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
 
   github.com/samczsun/transaction-decoder/4a3ad8252610d21bdd24ee369e9e13d9037b45c9:
     resolution: {tarball: https://codeload.github.com/samczsun/transaction-decoder/tar.gz/4a3ad8252610d21bdd24ee369e9e13d9037b45c9}

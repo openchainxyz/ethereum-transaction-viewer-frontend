@@ -20,6 +20,7 @@
         "@mui/lab": "5.0.0-alpha.101",
         "@mui/material": "^5.10.3",
         "@mui/system": "^5.10.8",
+        "@samczsun/abi-guesser": "github:samczsun/abi-guesser",
         "@samczsun/transaction-decoder": "github:samczsun/transaction-decoder",
         "csstype": "^3.1.1",
         "ethers": "^5.7.1",
