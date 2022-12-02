@@ -1,5 +1,5 @@
+import { UnwrapNativeTokenAction, WrapNativeTokenAction } from '@samczsun/transaction-decoder/lib/sdk/actions';
 import { DataRenderer } from "../DataRenderer";
-import { TransferAction, UnwrapNativeTokenAction, WrapNativeTokenAction } from "../decoder/sdk/actions";
 import { DecodeFormatOpts, Formatter } from "./types";
 
 export class WrappedNativeTokenFormatter extends Formatter<WrapNativeTokenAction | UnwrapNativeTokenAction> {

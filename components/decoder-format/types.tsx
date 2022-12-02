@@ -1,4 +1,5 @@
 import Tooltip from "@mui/material/Tooltip";
+import { NATIVE_TOKEN } from '@samczsun/transaction-decoder/lib/sdk/actions';
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import React from "react";
 import WithSeparator from "react-with-separator";
@@ -8,7 +9,6 @@ import { formatUsd } from "../helpers";
 import { PriceMetadata } from "../metadata/prices";
 import { TokenMetadata } from "../metadata/tokens";
 import { TraceTreeNodeLabel } from "../trace/TraceTreeItem";
-import { Action, NATIVE_TOKEN } from "../decoder/sdk/actions";
 
 export type DecodeFormatOpts = {
     timestamp: number;

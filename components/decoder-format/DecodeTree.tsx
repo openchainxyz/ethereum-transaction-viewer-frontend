@@ -16,32 +16,17 @@ import { TransactionMetadataContext } from '../metadata/transaction';
 import { TraceTreeItem } from '../trace/TraceTreeItem';
 import { TraceMetadata } from '../types';
 import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
-import { decode, registerDecoders } from '../decoder/sdk/decoder';
-import { DecoderInputTraceExt, DecoderOutput, MetadataRequest, ProviderDecoderChainAccess } from '../decoder/sdk/types';
-import { getNodeId } from '../decoder/sdk/utils';
 import { format } from './formatter';
-import { UniswapV2PairSwapDecoder, UniswapV2RouterSwapDecoder } from '../decoder/decoders/uniswapv2';
-import { CometSupplyDecoder } from '../decoder/decoders/comet';
-import { WrappedNativeTokenDecoder } from '../decoder/decoders/wrapped';
-import { CurveSwapDecoder } from '../decoder/decoders/curve';
-import { UniswapV3RouterSwapDecoder } from '../decoder/decoders/uniswapv3';
-import { ArtGobblersMintDecoder } from '../decoder/decoders/art-gobblers';
-import { ENSDecoder } from '../decoder/decoders/ens';
-import { TransferDecoder } from '../decoder/decoders/fallback';
+import { defaultDecoders } from '@samczsun/transaction-decoder/lib/decoders';
+import { TransferDecoder } from '@samczsun/transaction-decoder/lib/decoders/fallback';
+import { DecoderManager } from '@samczsun/transaction-decoder/lib/sdk/decoder';
+import { getNodeId } from '@samczsun/transaction-decoder/lib/sdk/utils';
+import { DecoderOutput, MetadataRequest, ProviderDecoderChainAccess, DecoderInputTraceExt } from '@samczsun/transaction-decoder/lib/sdk/types';
 
-registerDecoders([
-    new UniswapV2RouterSwapDecoder(),
-    new UniswapV2PairSwapDecoder(),
-    new ENSDecoder(),
-    new CometSupplyDecoder(),
-    new WrappedNativeTokenDecoder(),
-    new CurveSwapDecoder(),
-    new UniswapV3RouterSwapDecoder(),
-    new ArtGobblersMintDecoder(),
-
-    // must come last!
+const decoderManager = new DecoderManager(
+    defaultDecoders,
     new TransferDecoder(),
-])
+);
 
 export type DecodeTreeProps = {
     provider: BaseProvider;
@@ -142,7 +127,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
 
         const input = remap(props.traceResult.entrypoint);
         console.log("remapped input", input);
-        decode(input, access)
+        decoderManager.decode(input, access)
             .then(data => {
                 console.log("decoded output", data);
                 setData(data)

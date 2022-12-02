@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ChainConfig } from '../Chains';
-import { NATIVE_TOKEN } from '../decoder/sdk/actions';
+
+const NATIVE_TOKEN = 'native_token';
 
 type CoinInfo = {
     confidence: number;

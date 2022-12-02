@@ -3,7 +3,7 @@ import { BaseProvider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import React from 'react';
 import { SupportedChains } from '../Chains';
-import { NATIVE_TOKEN } from '../decoder/sdk/actions';
+const NATIVE_TOKEN = 'native_token';
 
 export type TokenInfo = {
     symbol?: string;

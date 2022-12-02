@@ -5,7 +5,6 @@ import { TraceMetadata } from '../types';
 import React, { useContext } from 'react';
 import { SpanIconButton } from '../SpanIconButton';
 import { BigNumber, ethers } from 'ethers';
-import { NATIVE_TOKEN } from '../decoder/sdk/actions';
 import { findAffectedContract, formatUsd } from '../helpers';
 import { DataRenderer } from '../DataRenderer';
 import { ChainConfig, ChainConfigContext } from '../Chains';
@@ -14,6 +13,8 @@ import { fetchTokenMetadata, TokenMetadata, TokenMetadataContext } from '../meta
 import { TraceEntryCall, TraceEntryLog, TraceResponse } from '../api';
 import { BaseProvider } from '@ethersproject/providers';
 import { TransactionMetadataContext } from '../metadata/transaction';
+
+const NATIVE_TOKEN = 'native_token';
 
 type AddressValueInfo = {
     hasMissingPrices: boolean;

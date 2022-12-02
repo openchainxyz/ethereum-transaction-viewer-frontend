@@ -1,5 +1,5 @@
 import { DataRenderer } from "../DataRenderer";
-import { SwapAction } from "../decoder/sdk/actions";
+import { SwapAction } from '@samczsun/transaction-decoder/lib/sdk/actions';
 import { DecodeFormatOpts, Formatter } from "./types";
 
 export class SwapFormatter extends Formatter<SwapAction> {
