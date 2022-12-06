@@ -116,6 +116,7 @@ function Navbar() {
                         <select
                             className="outline-1 outline outline-[#0000002d] py-2 px-3 mr-[1px]"
                             onChange={(event) => setChain(event.target.value)}
+                            value={chain}
                         >
                             {queryChain && !Array.isArray(queryChain) && queryChain.startsWith('conduit') ? (
                                 <option key={queryChain} value={queryChain} selected>
