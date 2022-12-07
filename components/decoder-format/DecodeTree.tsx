@@ -145,7 +145,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
         fetchDefiLlamaPrices(
             priceMetadata.updater,
             Array.from(requestedMetadata.tokens).map((token) => `${chainConfig.defillamaPrefix}:${token}`),
-            transactionMetadata.block.timestamp,
+            transactionMetadata.timestamp,
         );
 
         fetchTokenMetadata(tokenMetadata.updater, props.provider, Array.from(requestedMetadata.tokens));
@@ -168,7 +168,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                         key={id}
                         nodeId={id}
                         treeContent={format(v, {
-                            timestamp: transactionMetadata.block.timestamp,
+                            timestamp: transactionMetadata.timestamp,
                             chain: chainConfig,
                             prices: priceMetadata,
                             tokens: tokenMetadata,

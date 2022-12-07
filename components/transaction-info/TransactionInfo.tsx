@@ -85,7 +85,7 @@ export const TransactionInfo = (props: TransactionInfoProps) => {
     const chainConfig = useContext(ChainConfigContext);
     const priceMetadata = useContext(PriceMetadataContext);
 
-    let blockTimestamp = DateTime.fromSeconds(transactionMetadata.block.timestamp);
+    let blockTimestamp = DateTime.fromSeconds(transactionMetadata.timestamp);
 
     let localTime = blockTimestamp.toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');
     let utcTime = blockTimestamp.toUTC().toFormat('yyyy-MM-dd hh:mm:ss ZZZZ');

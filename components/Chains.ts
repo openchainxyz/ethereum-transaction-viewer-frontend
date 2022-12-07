@@ -1,6 +1,7 @@
 import React from 'react';
 
 export type ChainConfig = {
+    chainId: number;
     id: string;
     displayName: string;
     nativeTokenAddress: string;
@@ -13,6 +14,7 @@ export type ChainConfig = {
 
 export const SupportedChains = [
     {
+        chainId: 1,
         id: 'ethereum',
         displayName: 'Ethereum Mainnet',
         nativeTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -23,6 +25,7 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://etherscan.io',
     },
     {
+        chainId: 137,
         id: 'polygon',
         displayName: 'Polygon Mainnet',
         nativeTokenAddress: '0x0eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -33,6 +36,7 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://polygonscan.com',
     },
     {
+        chainId: 10,
         id: 'optimism',
         displayName: 'Optimism Mainnet',
         nativeTokenAddress: '0x1eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -43,6 +47,7 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://optimistic.etherscan.io',
     },
     {
+        chainId: 56,
         id: 'binance',
         displayName: 'Binance Mainnet',
         nativeTokenAddress: '0x2eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -53,6 +58,7 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://bscscan.com',
     },
     {
+        chainId: 43112,
         id: 'avalanche',
         displayName: 'Avalanche Mainnet',
         nativeTokenAddress: '0x3eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -63,6 +69,7 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://snowtrace.io',
     },
     {
+        chainId: 42161,
         id: 'arbitrum',
         displayName: 'Arbitrum Mainnet',
         nativeTokenAddress: '0x4eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -73,6 +80,7 @@ export const SupportedChains = [
         blockexplorerUrl: 'https://arbiscan.io',
     },
     {
+        chainId: 250,
         id: 'fantom',
         displayName: 'Fantom Mainnet',
         nativeTokenAddress: '0x5eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',

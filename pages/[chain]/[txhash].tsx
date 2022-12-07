@@ -1,42 +1,37 @@
-import * as React from 'react';
+import { getNetwork } from '@ethersproject/networks';
+import { BaseProvider } from '@ethersproject/providers';
 import { ThemeProvider, Typography } from '@mui/material';
-import { Result, TraceMetadata } from '../../components/types';
-import { theme } from '../../components/helpers';
-import { precompiles } from '../../components/precompiles';
 import { ethers } from 'ethers';
-import styles from '../../styles/Home.module.css';
 import { useRouter } from 'next/router';
-import { BaseProvider, JsonRpcProvider } from '@ethersproject/providers';
-import { TransactionInfo } from '../../components/transaction-info/TransactionInfo';
-import { DecodeTree } from '../../components/decoder-format/DecodeTree';
+import * as React from 'react';
+import { doApiRequest, TraceEntry, TraceResponse } from '../../components/api';
 import { ChainConfig, ChainConfigContext, defaultChainConfig, getChain } from '../../components/Chains';
-import Home from '../index';
-import { ValueChange } from '../../components/value-change/ValueChange';
+import { DecodeTree } from '../../components/decoder-format/DecodeTree';
+import { JsonRpcBatchProvider } from '../../components/ethers/json-rpc-batch-provider';
+import { theme } from '../../components/helpers';
+import { defaultLabelMetadata, LabelMetadata, LabelMetadataContext } from '../../components/metadata/labels';
+import {
+    defaultPreimageMetadata,
+    PreimageMetadata,
+    PreimageMetadataContext,
+} from '../../components/metadata/preimages';
 import {
     defaultPriceMetadata,
     fetchDefiLlamaPrices,
     PriceMetadata,
     PriceMetadataContext,
 } from '../../components/metadata/prices';
-import {
-    defaultTokenMetadata,
-    fetchTokenMetadata,
-    TokenMetadata,
-    TokenMetadataContext,
-} from '../../components/metadata/tokens';
-import { TraceTree } from '../../components/trace/TraceTree';
-import { defaultLabelMetadata, LabelMetadata, LabelMetadataContext } from '../../components/metadata/labels';
+import { defaultTokenMetadata, TokenMetadata, TokenMetadataContext } from '../../components/metadata/tokens';
 import { TransactionMetadata, TransactionMetadataContext } from '../../components/metadata/transaction';
-import { doApiRequest, TraceEntry, TraceResponse } from '../../components/api';
-import {
-    defaultPreimageMetadata,
-    PreimageMetadata,
-    PreimageMetadataContext,
-} from '../../components/metadata/preimages';
+import { precompiles } from '../../components/precompiles';
+import { TraceTree } from '../../components/trace/TraceTree';
+import { TransactionInfo } from '../../components/transaction-info/TransactionInfo';
+import { Result, TraceMetadata } from '../../components/types';
+import { ValueChange } from '../../components/value-change/ValueChange';
+import styles from '../../styles/Home.module.css';
+import Home from '../index';
 
 export default function TransactionViewer() {
-    console.log('rendering main view');
-
     const router = useRouter();
     const { chain, txhash } = router.query;
 
@@ -62,11 +57,7 @@ export default function TransactionViewer() {
         const chainConfig = await getChain(chain);
         if (!chainConfig) return;
 
-        console.log(chainConfig);
         setChainConfig(chainConfig);
-
-        const provider = new JsonRpcProvider(chainConfig.rpcUrl);
-        setProvider(provider);
 
         setTokenMetadata({
             ...defaultTokenMetadata(),
@@ -83,14 +74,32 @@ export default function TransactionViewer() {
         setTraceResult(undefined);
         setTransactionMetadata(undefined);
 
-        Promise.all([provider.getTransaction(txhash), provider.getTransactionReceipt(txhash)])
+        const provider = new JsonRpcBatchProvider(chainConfig.rpcUrl, getNetwork(chainConfig.chainId));
+        setProvider(provider);
+
+        console.time('load transaction metadata');
+        Promise.all([
+            provider.getTransaction(txhash),
+            provider.getTransactionReceipt(txhash),
+            provider.getBlockNumber(),
+        ])
             .then(([transaction, receipt]) => {
+                setTransactionMetadata({
+                    ok: true,
+                    result: {
+                        timestamp: Math.floor(new Date().getTime() / 1000),
+                        transaction: transaction,
+                        receipt: receipt,
+                    },
+                });
+
+                console.timeLog('load transaction metadata');
                 provider.getBlock(receipt.blockHash).then((block) => {
-                    console.log('loaded transaction metadata', transaction, receipt, block);
+                    console.timeEnd('load transaction metadata');
                     setTransactionMetadata({
                         ok: true,
                         result: {
-                            block: block,
+                            timestamp: block.timestamp,
                             transaction: transaction,
                             receipt: receipt,
                         },

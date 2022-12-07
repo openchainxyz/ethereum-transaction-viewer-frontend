@@ -3,7 +3,7 @@ import { Block, TransactionReceipt, TransactionResponse } from '@ethersproject/a
 import { Result } from '../types';
 
 export type TransactionMetadata = {
-    block: Block;
+    timestamp: number;
     transaction: TransactionResponse;
     receipt: TransactionReceipt;
 };

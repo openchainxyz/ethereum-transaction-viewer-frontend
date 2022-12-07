@@ -275,7 +275,7 @@ export const ValueChange = (props: ValueChangeProps) => {
             const tokenAddress = token === NATIVE_TOKEN ? ethers.constants.AddressZero : token;
             return `${chainConfig.defillamaPrefix}:${tokenAddress}`;
         }),
-        transactionMetadata.block.timestamp,
+        transactionMetadata.timestamp,
     );
     fetchTokenMetadata(tokenMetadata.updater, provider, Array.from(allTokens));
 

@@ -7,7 +7,7 @@ import { formatEther } from 'ethers/lib/utils';
 import * as React from 'react';
 import { useContext } from 'react';
 import { TraceEntryCall, TraceEntryLog, TraceEntrySload, TraceEntrySstore, TraceResponse } from '../api';
-import { guessFragment } from '@samczsun/abi-guesser/calldata-guesser/guess';
+import { guessFragment } from '@samczsun/abi-guesser/dist/encode-guesser';
 import { ChainConfigContext } from '../Chains';
 import { DataRenderer } from '../DataRenderer';
 import { EncodedABITextField } from '../EncodedABITextField';
