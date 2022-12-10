@@ -1,17 +1,37 @@
 import Head from 'next/head';
-import styles from '../styles/Home.module.css';
 import * as React from 'react';
 
+import { DarkMode, GitHub, LightMode, Twitter } from '@mui/icons-material';
+import {
+    Button,
+    Container,
+    Divider,
+    FormControl,
+    IconButton,
+    Input,
+    InputBase,
+    InputLabel,
+    MenuItem,
+    NativeSelect,
+    Paper,
+    Select,
+    Typography,
+} from '@mui/material';
+import Grid2 from '@mui/material/Unstable_Grid2';
 import { Box } from '@mui/system';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { SupportedChains } from './Chains';
-import { DarkMode, GitHub, LightMode, Twitter } from '@mui/icons-material';
-import { useContext } from 'react';
-import { SearchMetadataContext } from './metadata/search';
+import SearchIcon from '@mui/icons-material/Search';
+import TextField from '@mui/material/TextField';
 
-function Navbar() {
+export type NavbarProps = {
+    useDarkMode: boolean;
+    onSetUseDarkMode: (v: boolean) => void;
+};
+
+function Navbar(props: NavbarProps) {
     const router = useRouter();
     const { chain: queryChain, txhash: queryTxhash } = router.query;
 
@@ -27,34 +47,11 @@ function Navbar() {
         setTxhash(queryTxhash);
     }, [queryChain, queryTxhash]);
 
-    //Dark Mode Logic
-    const prefDarkKey = 'pref:dark';
-    const initialDarkValue = (() => {
-        if (typeof window !== 'undefined') {
-            const darkItem = window.localStorage.getItem(prefDarkKey);
-            if (darkItem) {
-                try {
-                    return !!JSON.parse(darkItem);
-                } catch {}
-            }
+    const doSearch = () => {
+        if (/0x[0-9a-fA-F]{64}/g.test(txhash)) {
+            router.push(`/${chain}/${txhash}`);
         }
-        return false;
-    })();
-    const [darkMode, setDarkMode] = React.useState(initialDarkValue);
-    React.useEffect(() => {
-        window.localStorage.setItem(prefDarkKey, JSON.stringify(darkMode));
-    }, [darkMode]);
-
-    React.useEffect(() => {
-        const _element = document.documentElement;
-        if (darkMode) {
-            _element.classList.add('dark');
-            _element.style.background = '#12181f';
-        } else {
-            _element.classList.remove('dark');
-            _element.style.background = '#FFFFFF';
-        }
-    }, [darkMode]);
+    };
 
     return (
         <div>
@@ -73,90 +70,104 @@ function Navbar() {
                 <meta property="twitter:site" content="@samczsun" />
                 <link rel="icon" href="/favicon.png" />
             </Head>
-            <div className="max-w-[900px] mx-auto text-[#19232D] dark:text-white relative px-5">
-                <Box className="flex flex-col" justifyContent="left">
-                    <div className="flex my-5">
-                        <div className="md:w-5 w-4 my-auto mr-3 flex hover:opacity-60 cursor-pointer dark:invert">
-                            <Link href={'/'}>
-                                <Image src="/favicon.png" width={'512'} height={'512'} layout="intrinsic" />
-                            </Link>
-                        </div>
-                        <h1 className="md:text-xl text-sm -tracking-wider font-inter">Ethereum Transaction Viewer</h1>
-                        <a
-                            className="md:w-5 w-4 my-auto mr-4 flex ml-auto hover:opacity-60"
-                            href="https://github.com/samczsun/ethereum-transaction-viewer-frontend"
-                            target={'_blank'}
-                            rel={'noreferrer noopener'}
-                        >
+
+            <Container maxWidth={'md'}>
+                <Grid2 container justifyContent="center" alignContent="center" p={2} spacing={1}>
+                    <Grid2 style={{ cursor: 'pointer' }}>
+                        <Link href={'/'}>
+                            <Box>
+                                <Image src="/favicon.png" width="24" height="24" alt="logo" />
+                            </Box>
+                        </Link>
+                    </Grid2>
+                    <Grid2 sx={{ display: { xs: 'none', md: 'initial' } }}>
+                        <Typography fontFamily="NBInter">Ethereum Transaction Viewer</Typography>
+                    </Grid2>
+                    <Grid2 xs></Grid2>
+                    <Grid2>
+                        <a href="https://twitter.com/samczsun" target={'_blank'} rel={'noreferrer noopener'}>
                             <GitHub />
                         </a>
+                    </Grid2>
+                    <Grid2>
                         <a
-                            className="md:w-5 w-4 my-auto mr-4 flex hover:opacity-60"
-                            href="https://twitter.com/samczsun"
+                            href="https://github.com/samczsun/ethereum-transaction-viewer-frontend"
                             target={'_blank'}
                             rel={'noreferrer noopener'}
                         >
                             <Twitter />
                         </a>
-                        <button
-                            className="md:w-5 w-4 my-auto mr-4 flex hover:opacity-60"
-                            onClick={() => setDarkMode(!darkMode)}
-                        >
-                            {darkMode ? <LightMode /> : <DarkMode />}
-                        </button>
-                    </div>
-
-                    <div className="h-[1px] w-full bg-[#0000002d] dark:bg-[#ffffff61]"></div>
-                </Box>
-                <div className="flex flex-row w-full place-content-center">
-                    <div
-                        className="flex-row flex place-content-center relative w-full my-5 text-[#606161]"
-                        style={{ fontFamily: 'RiformaLL' }}
-                    >
-                        <select
-                            className="outline-1 outline outline-[#0000002d] py-2 px-3 mr-[1px]"
+                    </Grid2>
+                    <Grid2 onClick={() => props.onSetUseDarkMode(!props.useDarkMode)}>
+                        {props.useDarkMode ? <LightMode /> : <DarkMode />}
+                    </Grid2>
+                </Grid2>
+                <Divider></Divider>
+                <Grid2 container p={2}>
+                    <Grid2>
+                        <TextField
                             onChange={(event) => setChain(event.target.value)}
                             value={chain}
+                            variant="standard"
+                            select
+                            margin="dense"
+                            fullWidth
+                            SelectProps={{
+                                style: {
+                                    fontFamily: 'RiformaLL',
+                                },
+                            }}
                         >
-                            {queryChain && !Array.isArray(queryChain) && queryChain.startsWith('conduit') ? (
-                                <option key={queryChain} value={queryChain} selected>
-                                    {queryChain}
-                                </option>
-                            ) : (
-                                <></>
-                            )}
                             {SupportedChains.map((v) => {
                                 return (
-                                    <option key={v.id} value={v.id}>
+                                    <MenuItem key={v.id} value={v.id} style={{ fontFamily: 'RiformaLL' }}>
                                         {v.displayName}
-                                    </option>
+                                    </MenuItem>
                                 );
                             })}
-                        </select>
-                        <input
-                            id="search"
-                            type="text"
+                            {!SupportedChains.find((sChain) => sChain.id === chain) ? (
+                                <MenuItem key={chain} value={chain} style={{ fontFamily: 'RiformaLL' }}>
+                                    {queryChain}
+                                </MenuItem>
+                            ) : null}
+                        </TextField>
+                    </Grid2>
+                    <Grid2 xs>
+                        <TextField
+                            variant="standard"
                             placeholder="Enter txhash..."
-                            value={txhash}
+                            fullWidth
+                            margin="dense"
                             onChange={(event) => setTxhash(event.target.value)}
+                            value={txhash}
                             onKeyUp={(event) => {
                                 if (event.key === 'Enter') {
-                                    router.push(`/${chain}/${txhash}`);
+                                    doSearch();
                                 }
                             }}
-                            className="w-full outline-1 outline outline-[#0000002d] py-2 px-3"
-                        />
-                        <button
-                            className="my-auto flex hover:bg-[#cbffcb] bg-white h-full outline-1 outline outline-[#0000002d] rounded-none text-lg py-2 px-3 z-10 ml-[1px] hover:text-black"
-                            onClick={() => {
-                                txhash ? router.push(`/${chain}/${txhash}`) : console.log('No hash entered.');
+                            inputProps={{
+                                style: {
+                                    fontFamily: 'RiformaLL',
+                                },
                             }}
-                        >
-                            <h1 className="my-auto">View</h1>
-                        </button>
-                    </div>
-                </div>
-            </div>
+                            InputProps={{
+                                endAdornment: (
+                                    <Button
+                                        variant="text"
+                                        size="small"
+                                        onClick={() => doSearch()}
+                                        style={{
+                                            fontFamily: 'RiformaLL',
+                                        }}
+                                    >
+                                        View
+                                    </Button>
+                                ),
+                            }}
+                        ></TextField>
+                    </Grid2>
+                </Grid2>
+            </Container>
         </div>
     );
 }

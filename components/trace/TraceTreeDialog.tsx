@@ -48,7 +48,6 @@ export const TraceTreeDialog = (props: TraceTreeDialogProps) => {
             }}
         >
             <Dialog
-                className={'dark:invert'}
                 open={open}
                 onClose={() => {}}
                 PaperComponent={DraggablePaper}

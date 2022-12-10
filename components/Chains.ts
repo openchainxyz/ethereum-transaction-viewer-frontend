@@ -16,7 +16,7 @@ export const SupportedChains = [
     {
         chainId: 1,
         id: 'ethereum',
-        displayName: 'Ethereum Mainnet',
+        displayName: 'Ethereum',
         nativeTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'ETH',
         coingeckoId: 'coingecko:ethereum',
@@ -27,7 +27,7 @@ export const SupportedChains = [
     {
         chainId: 137,
         id: 'polygon',
-        displayName: 'Polygon Mainnet',
+        displayName: 'Polygon',
         nativeTokenAddress: '0x0eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'MATIC',
         coingeckoId: 'coingecko:matic-network',
@@ -38,7 +38,7 @@ export const SupportedChains = [
     {
         chainId: 10,
         id: 'optimism',
-        displayName: 'Optimism Mainnet',
+        displayName: 'Optimism',
         nativeTokenAddress: '0x1eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'ETH',
         coingeckoId: 'coingecko:ethereum',
@@ -49,7 +49,7 @@ export const SupportedChains = [
     {
         chainId: 56,
         id: 'binance',
-        displayName: 'Binance Mainnet',
+        displayName: 'Binance',
         nativeTokenAddress: '0x2eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'BNB',
         coingeckoId: 'coingecko:binancecoin',
@@ -60,7 +60,7 @@ export const SupportedChains = [
     {
         chainId: 43112,
         id: 'avalanche',
-        displayName: 'Avalanche Mainnet',
+        displayName: 'Avalanche',
         nativeTokenAddress: '0x3eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'AVAX',
         coingeckoId: 'coingecko:avalanche-2',
@@ -71,7 +71,7 @@ export const SupportedChains = [
     {
         chainId: 42161,
         id: 'arbitrum',
-        displayName: 'Arbitrum Mainnet',
+        displayName: 'Arbitrum',
         nativeTokenAddress: '0x4eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'ETH',
         coingeckoId: 'coingecko:ethereum',
@@ -82,7 +82,7 @@ export const SupportedChains = [
     {
         chainId: 250,
         id: 'fantom',
-        displayName: 'Fantom Mainnet',
+        displayName: 'Fantom',
         nativeTokenAddress: '0x5eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
         nativeSymbol: 'FTM',
         coingeckoId: 'coingecko:fantom',

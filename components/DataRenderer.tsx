@@ -35,6 +35,8 @@ let formatValueWithParamType = (
             label = `[${labels[address.toLowerCase()]}]`;
         }
 
+        label = <span style={{ overflowWrap: 'anywhere' }}>{label}</span>;
+
         if (makeLink) {
             return (
                 <a

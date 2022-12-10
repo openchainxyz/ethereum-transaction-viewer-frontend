@@ -1,11 +1,14 @@
+import { TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
 import React from 'react';
-import { Block, TransactionReceipt, TransactionResponse } from '@ethersproject/abstract-provider';
-import { Result } from '../types';
+
+export type MinedTransaction = {
+    receipt: TransactionReceipt;
+    timestamp: number;
+};
 
 export type TransactionMetadata = {
-    timestamp: number;
     transaction: TransactionResponse;
-    receipt: TransactionReceipt;
+    result: MinedTransaction | null;
 };
 
 export const TransactionMetadataContext = React.createContext<TransactionMetadata>({} as TransactionMetadata);

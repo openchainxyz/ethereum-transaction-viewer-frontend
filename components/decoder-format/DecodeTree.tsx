@@ -142,11 +142,13 @@ export const DecodeTree = (props: DecodeTreeProps) => {
     if (data) {
         const [decodedActions, requestedMetadata] = data;
 
-        fetchDefiLlamaPrices(
-            priceMetadata.updater,
-            Array.from(requestedMetadata.tokens).map((token) => `${chainConfig.defillamaPrefix}:${token}`),
-            transactionMetadata.timestamp,
-        );
+        if (transactionMetadata.result) {
+            fetchDefiLlamaPrices(
+                priceMetadata.updater,
+                Array.from(requestedMetadata.tokens).map((token) => `${chainConfig.defillamaPrefix}:${token}`),
+                transactionMetadata.result.timestamp,
+            );
+        }
 
         fetchTokenMetadata(tokenMetadata.updater, props.provider, Array.from(requestedMetadata.tokens));
 
@@ -168,7 +170,7 @@ export const DecodeTree = (props: DecodeTreeProps) => {
                         key={id}
                         nodeId={id}
                         treeContent={format(v, {
-                            timestamp: transactionMetadata.timestamp,
+                            timestamp: transactionMetadata.result.timestamp,
                             chain: chainConfig,
                             prices: priceMetadata,
                             tokens: tokenMetadata,

@@ -269,14 +269,16 @@ export const ValueChange = (props: ValueChangeProps) => {
     }, [traceResult, traceMetadata, tokenMetadata, priceMetadata, chainConfig]);
     const [sortOptions, setSortOptions] = React.useState<['address' | 'price', 'asc' | 'desc']>(['price', 'desc']);
 
-    fetchDefiLlamaPrices(
-        priceMetadata.updater,
-        Array.from(allTokens).map((token) => {
-            const tokenAddress = token === NATIVE_TOKEN ? ethers.constants.AddressZero : token;
-            return `${chainConfig.defillamaPrefix}:${tokenAddress}`;
-        }),
-        transactionMetadata.timestamp,
-    );
+    if (transactionMetadata.result) {
+        fetchDefiLlamaPrices(
+            priceMetadata.updater,
+            Array.from(allTokens).map((token) => {
+                const tokenAddress = token === NATIVE_TOKEN ? ethers.constants.AddressZero : token;
+                return `${chainConfig.defillamaPrefix}:${tokenAddress}`;
+            }),
+            transactionMetadata.result.timestamp,
+        );
+    }
     fetchTokenMetadata(tokenMetadata.updater, provider, Array.from(allTokens));
 
     return Object.entries(changes).length > 0 ? (
@@ -323,25 +325,25 @@ export const ValueChange = (props: ValueChangeProps) => {
                     .sort(
                         sortOptions[0] === 'address'
                             ? (a, b) => {
-                                  return sortOptions[1] === 'asc' ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]);
-                              }
+                                return sortOptions[1] === 'asc' ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]);
+                            }
                             : (a, b) => {
-                                  if (!a[1].hasMissingPrices && !b[1].hasMissingPrices) {
-                                      return sortOptions[1] === 'asc'
-                                          ? a[1].totalValueChange < b[1].totalValueChange
-                                              ? -1
-                                              : 1
-                                          : b[1].totalValueChange < a[1].totalValueChange
-                                          ? -1
-                                          : 1;
-                                  } else if (a[1].hasMissingPrices) {
-                                      return sortOptions[1] === 'asc' ? -1 : 1;
-                                  } else if (b[1].hasMissingPrices) {
-                                      return sortOptions[1] === 'asc' ? 1 : -1;
-                                  } else {
-                                      return 0;
-                                  }
-                              },
+                                if (!a[1].hasMissingPrices && !b[1].hasMissingPrices) {
+                                    return sortOptions[1] === 'asc'
+                                        ? a[1].totalValueChange < b[1].totalValueChange
+                                            ? -1
+                                            : 1
+                                        : b[1].totalValueChange < a[1].totalValueChange
+                                            ? -1
+                                            : 1;
+                                } else if (a[1].hasMissingPrices) {
+                                    return sortOptions[1] === 'asc' ? -1 : 1;
+                                } else if (b[1].hasMissingPrices) {
+                                    return sortOptions[1] === 'asc' ? 1 : -1;
+                                } else {
+                                    return 0;
+                                }
+                            },
                     )
                     .map((entry) => {
                         return <Row key={entry[0]} address={entry[0]} changes={entry[1]} />;
