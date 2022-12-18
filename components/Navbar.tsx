@@ -85,13 +85,13 @@ function Navbar(props: NavbarProps) {
                     </Grid2>
                     <Grid2 xs></Grid2>
                     <Grid2>
-                        <a href="https://twitter.com/samczsun" target={'_blank'} rel={'noreferrer noopener'}>
+                        <a href="https://github.com/samczsun/ethereum-transaction-viewer-frontend" target={'_blank'} rel={'noreferrer noopener'}>
                             <GitHub />
                         </a>
                     </Grid2>
                     <Grid2>
                         <a
-                            href="https://github.com/samczsun/ethereum-transaction-viewer-frontend"
+                            href="https://twitter.com/samczsun"
                             target={'_blank'}
                             rel={'noreferrer noopener'}
                         >
