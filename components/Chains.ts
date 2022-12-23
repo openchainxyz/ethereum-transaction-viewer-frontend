@@ -90,6 +90,17 @@ export const SupportedChains = [
         rpcUrl: 'https://rpcapi.fantom.network',
         blockexplorerUrl: 'https://ftmscan.com',
     },
+    {
+        chainId: 5,
+        id: 'goerli',
+        displayName: 'Goerli',
+        nativeTokenAddress: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        nativeSymbol: 'ETH',
+        coingeckoId: 'coingecko:ethereum',
+        defillamaPrefix: 'ethereum',
+        rpcUrl: 'https://rpc.ankr.com/eth_goerli',
+        blockexplorerUrl: 'https://goerli.etherscan.io/',
+    },
 ];
 
 const conduitAPIs: { [key: string]: string } = {
