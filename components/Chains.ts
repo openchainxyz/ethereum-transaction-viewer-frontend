@@ -90,6 +90,17 @@ export const SupportedChains = [
         rpcUrl: 'https://rpcapi.fantom.network',
         blockexplorerUrl: 'https://ftmscan.com',
     },
+    {
+        chainId: 25,
+        id: 'cronos',
+        displayName: 'Cronos',
+        nativeTokenAddress: '0x6eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        nativeSymbol: 'CRO',
+        coingeckoId: 'coingecko:cronos',
+        defillamaPrefix: 'cronos',
+        rpcUrl: 'https://evm.cronos.org',
+        blockexplorerUrl: 'https://cronoscan.com/',
+    },
 ];
 
 const conduitAPIs: { [key: string]: string } = {
